@@ -1,0 +1,35 @@
+.card--face_down {
+  background-image:
+    repeating-linear-gradient(45deg, transparent, transparent 27px, #FCC235 27px, #FCC235 31px),
+    repeating-linear-gradient(-45deg, transparent, transparent 27px, #FCC235 27px, #FCC235 31px);
+  display: flex;
+  flex-direction: column;
+  width: 100px;
+  height: 160px;
+  border: solid 1px black;
+  border-radius: 8px;
+  background-color: rgb(235, 237, 186);
+  padding: 5px;
+}
+
+.card--face_down .cacao {
+  display: block;
+  color: #A7381F;
+  font-family: "Segoe UI", serif;
+  font-size: 40px;
+  font-weight: bold;
+  transform: rotate(70deg);
+  margin: auto;
+  padding-bottom: 5px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  width: 100px;
+  height: 160px;
+  border: solid 1px black;
+  border-radius: 8px;
+  background-color: rgb(235, 237, 186);
+  padding: 5px;
+}
