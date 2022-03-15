@@ -1,0 +1,3 @@
+export enum State {
+  WAITING_FOR_CARD, CARD_PICKING, CARD_CALLED, MISSING
+}
