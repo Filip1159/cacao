@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {Card} from "../model/Card";
 import {Suit, getAllSuits} from "../model/Suit";
 import {Rank, RankCharacter} from "../model/Rank";
-import {PlayerService} from "./player.service";
+import {Player} from "./player";
 
 @Injectable({
 	providedIn: 'root'
@@ -21,7 +21,7 @@ export class CardService {
 		this.discardPile = [this.pickBasicCardFromTop()]
 	}
 
-	dealCards(players: PlayerService[]): void {
+	dealCards(players: Player[]): void {
 		for (let i = 0; i < 5; i++) {
 			for (let player of players) {
 				player.addCard(this.deck.pop()!)
@@ -76,28 +76,7 @@ export class CardService {
 
 	printDeck(): void {
 		for (let card of this.deck) {
-			console.log(this.cardToString(card))
+			console.log(card.toString())
 		}
-	}
-
-	cardToString(card: Card): string {
-		let suit
-		switch (card.suit) {
-			case Suit.HEARTS:
-				suit = '♥'
-				break
-			case Suit.DIAMS:
-				suit = '♦'
-				break
-			case Suit.SPADES:
-				suit = '♠'
-				break
-			case Suit.CLUBS:
-				suit = '♣'
-				break
-			default:
-				throw new Error("Internal error")
-		}
-		return `{rank: ${card.rank.toString()}, suit: ${suit}}`
 	}
 }

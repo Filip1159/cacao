@@ -6,7 +6,7 @@ import { AppComponent } from './app.component';
 import { CardComponent } from './components/cards/card/card.component';
 import { CardFaceDownComponent } from './components/cards/card-face-down/card-face-down.component';
 import { PlayerComponent } from './components/players/player/player.component';
-import { CardStackComponent } from './components/card-stack/card-stack.component';
+import { DiscardPileComponent } from './components/discard-pile/discard-pile.component';
 import { OpponentComponent } from './components/players/opponent/opponent.component';
 
 @NgModule({
@@ -15,7 +15,7 @@ import { OpponentComponent } from './components/players/opponent/opponent.compon
     CardComponent,
     CardFaceDownComponent,
     PlayerComponent,
-    CardStackComponent,
+    DiscardPileComponent,
     OpponentComponent
   ],
   imports: [

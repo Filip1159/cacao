@@ -1,4 +1,14 @@
 body {
-  margin: 0;
-  background-color: #2E69D9;
+	margin: 0;
+	background-color: #2E69D9;
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+	justify-content: space-between;
+}
+
+app-root {
+	display: block;
+	height: 100%;
 }

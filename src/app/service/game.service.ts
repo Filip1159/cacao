@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {Turn} from "../model/enum/Turn";
-import {PlayerService} from "./player.service";
+import {Player} from "./player";
 import {Card} from "../model/Card";
 import {Rank, RankCharacter} from "../model/Rank";
 import {State} from "../model/enum/State";
@@ -11,23 +11,31 @@ import {CardService} from "./card.service";
 })
 export class GameService {
 	turn: Turn
-	players: PlayerService[]
+	players: Player[]
 	state: State
 	cardCalled: Rank | null = null
 	cardsToPick: number = 0
 
 	constructor(public cardService: CardService) {
 		this.turn = Turn.MY
-		this.players = [new PlayerService(this, cardService), new PlayerService(this, cardService)]
+		this.players = [new Player(), new Player()]
 		this.state = State.WAITING_FOR_CARD
 		cardService.dealCards(this.players)
 	}
 
-	playCard(card: Card): void {
-		if (!this.isLegalMove(card)) throw new Error(`Illegal move: ${card} while ${this.cardService.discardPileTop} is on discard pile!`)
+	playCard(player: Player, cardIndex: number): void {
+		const card = player.cards[cardIndex]
+		if (!this.isLegalMove(card)) {
+			throw new Error(`Illegal move: ${JSON.stringify(card)} while
+				${JSON.stringify(this.cardService.discardPileTop)} is on discard pile!`)
+		}
+		player.removeCard(cardIndex)
 		this.cardService.putCardOnDiscardPile(card)
-		this.switchTurn()
 		this.switchState(card)
+		this.switchTurn()
+		if (this.turn == Turn.OPPONENT) {
+			this.playCard(this.players[1], this.getBestMove(this.players[1]))
+		}
 	}
 
 	isLegalMove(card: Card): boolean {
@@ -70,5 +78,13 @@ export class GameService {
 		this.state = State.WAITING_FOR_CARD
 		this.cardsToPick = 0
 		this.cardCalled = null
+	}
+
+
+	getBestMove(player: Player): number {
+		for (let cardIndex in player.cards) {
+			if (this.isLegalMove(player.cards[cardIndex])) return Number(cardIndex);
+		}
+		return -1;
 	}
 }

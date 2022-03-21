@@ -1,3 +1,3 @@
 <div id="player_cards">
-  <app-card *ngFor="let card of cards" [card]="card"></app-card>
+	<app-card *ngFor="let card of cards; index as i" [card]="card" (click)="onCardPlayed(i)"></app-card>
 </div>
