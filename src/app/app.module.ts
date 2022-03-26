@@ -8,6 +8,7 @@ import { CardFaceDownComponent } from './components/cards/card-face-down/card-fa
 import { PlayerComponent } from './components/players/player/player.component';
 import { DiscardPileComponent } from './components/discard-pile/discard-pile.component';
 import { OpponentComponent } from './components/players/opponent/opponent.component';
+import { CardCalledModalComponent } from './components/card-called-modal/card-called-modal.component';
 
 @NgModule({
   declarations: [
@@ -16,7 +17,8 @@ import { OpponentComponent } from './components/players/opponent/opponent.compon
     CardFaceDownComponent,
     PlayerComponent,
     DiscardPileComponent,
-    OpponentComponent
+    OpponentComponent,
+    CardCalledModalComponent
   ],
   imports: [
     BrowserModule,

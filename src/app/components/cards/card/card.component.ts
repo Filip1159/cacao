@@ -1,7 +1,6 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {Rank, RankCharacter} from "../../../model/Rank";
-import {Suit} from "../../../model/Suit";
 import {Card} from "../../../model/Card";
+import {Suit} from "../../../model/Suit";
 
 @Component({
 	selector: 'app-card',
@@ -9,7 +8,8 @@ import {Card} from "../../../model/Card";
 	styleUrls: ['./card.component.scss']
 })
 export class CardComponent implements OnInit {
-	@Input() card: Card = {rank: new Rank(2), suit: Suit.HEARTS}
+	@Input() card!: Card
+	@Input() disabled!: boolean
 
 	constructor() {
 	}
@@ -17,34 +17,11 @@ export class CardComponent implements OnInit {
 	ngOnInit(): void {
 	}
 
-	rankToString(): string {
-		switch (this.card.rank.value) {
-			case RankCharacter.Jack:
-				return "J"
-			case RankCharacter.Queen:
-				return "Q"
-			case RankCharacter.King:
-				return "K"
-			case RankCharacter.Ace:
-				return "A"
-			default:
-				return this.card.rank.value.toString()
-		}
+	get isRed(): boolean {
+		return this.card.suit === Suit.DIAMS || this.card.suit === Suit.HEARTS
 	}
 
-	suitToString(): string {
-		switch (this.card.suit) {
-			case Suit.HEARTS:
-				return '♥';
-			case Suit.DIAMS:
-				return '♦';
-			case Suit.SPADES:
-				return '♠';
-			case Suit.CLUBS:
-				return '♣';
-			default:
-				throw new Error("Internal error")
-		}
+	get isBlack(): boolean {
+		return !this.isRed
 	}
-
 }

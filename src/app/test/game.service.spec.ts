@@ -1,6 +1,6 @@
 import {GameService} from "../service/game.service";
 import {CardService} from "../service/card.service";
-import {PlayerService} from "../service/player";
+import {PlayerService} from "../service/player/Player";
 import {TestBed} from "@angular/core/testing";
 import {Card} from "../model/Card";
 import {Suit} from "../model/Suit";

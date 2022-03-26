@@ -3,11 +3,24 @@
 	flex-direction: column;
 	width: 100px;
 	height: 160px;
-	border: solid 1px black;
+	border: 1px solid black;
 	border-radius: 8px;
 	background-color: rgb(235, 237, 186);
 	padding: 5px;
 	cursor: pointer;
+
+	&:hover {
+		border: 1px solid aqua;
+	}
+
+	&--disabled {
+		opacity: 50%;
+		cursor: default;
+
+		&:hover {
+			border: 1px solid black;
+		}
+	}
 }
 
 .cacao {
@@ -16,16 +29,30 @@
 	font-weight: bold;
 	font-size: 60px;
 	margin: 0 auto 0 auto;
-	color: #A7381F;
+
+	&--red {
+		color: #A7381F;
+	}
+
+	&--black {
+		color: black;
+	}
 }
 
 .suit {
 	display: block;
-	color: #A7381F;
 	margin-left: 2px;
 	font-size: 25px;
 	width: 15px;
 	height: 15px;
+
+	&--red {
+		color: #A7381F;
+	}
+
+	&--black {
+		color: black;
+	}
 
 	&--upside_down {
 		transform: rotate(180deg);
@@ -40,6 +67,14 @@
 	font-weight: bold;
 	color: #A7381F;
 	margin-left: 2px;
+
+	&--red {
+		color: #A7381F;
+	}
+
+	&--black {
+		color: black;
+	}
 
 	&--upside_down {
 		transform: rotate(180deg);

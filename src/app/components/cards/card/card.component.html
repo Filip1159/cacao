@@ -1,7 +1,7 @@
-<div class="card">
-  <span class="number">{{ rankToString() }}</span>
-  <span class="suit">{{ suitToString() }}</span>
-  <span class="cacao">C</span>
-  <span class="suit suit--upside_down">{{ suitToString() }}</span>
-  <span class="number number--upside_down">{{ rankToString() }}</span>
+<div class="card" [ngClass]="{'card--disabled': disabled}">
+	<span class="number" [ngClass]="{'number--red': isRed, 'number--black': isBlack}">{{ card.rank.toString() }}</span>
+	<span class="suit" [ngClass]="{'suit--red': isRed, 'suit--black': isBlack}">{{ card.suit }}</span>
+	<span class="cacao" [ngClass]="{'cacao--red': isRed, 'cacao--black': isBlack}">{{ card.suit }}</span>
+	<span class="suit suit--upside_down" [ngClass]="{'suit--red': isRed, 'suit--black': isBlack}">{{ card.suit }}</span>
+	<span class="number number--upside_down" [ngClass]="{'number--red': isRed, 'number--black': isBlack}">{{ card.rank.toString() }}</span>
 </div>

@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {Card} from "../model/Card";
 import {Suit, getAllSuits} from "../model/Suit";
 import {Rank, RankCharacter} from "../model/Rank";
-import {Player} from "./player";
+import {Player} from "./player/Player";
 
 @Injectable({
 	providedIn: 'root'

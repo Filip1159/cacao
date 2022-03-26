@@ -1,3 +1,7 @@
 <div id="player_cards">
-	<app-card *ngFor="let card of cards; index as i" [card]="card" (click)="onCardPlayed(i)"></app-card>
+	<app-card #card *ngFor="let card of cards; index as i" [card]="card" (click)="onCardClick(i)" [disabled]="!isLegalMove(card) || !isMyTurn()"></app-card>
+	<button (click)="pickCardFromStack()" [disabled]="doesMissTurn() || !isMyTurn()">Pick card</button>
+	<button (click)="missTurn()" [disabled]="!doesMissTurn()">Miss turn :(</button>
+	<span>{{state}}</span>
+	<app-card-called-modal (onSelected)="onRankSelected($event)" [visible]="showCardCalledModal"></app-card-called-modal>
 </div>
