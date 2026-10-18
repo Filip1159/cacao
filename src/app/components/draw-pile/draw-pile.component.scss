@@ -6,7 +6,15 @@
 	padding: 0;
 	border: none;
 	background: none;
+	box-shadow: none;
 	cursor: pointer;
+
+	&:hover:not(:disabled),
+	&:active:not(:disabled) {
+		transform: none;
+		box-shadow: none;
+		background: none;
+	}
 
 	&:disabled {
 		cursor: default;
@@ -18,9 +26,27 @@
 		border-radius: 8px;
 	}
 
+	// nothing to play: picking a card is the move
+	&--hint app-card-face-down {
+		animation: draw-pile-hint 1.2s ease-in-out infinite;
+	}
+
 	&__count {
 		color: white;
 		font-family: "Segoe UI", sans-serif;
 		font-size: 16px;
+	}
+}
+
+@keyframes draw-pile-hint {
+	50% {
+		filter: drop-shadow(0 0 10px var(--accent));
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.draw-pile--hint app-card-face-down {
+		animation: none;
+		filter: drop-shadow(0 0 8px var(--accent));
 	}
 }

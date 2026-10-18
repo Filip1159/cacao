@@ -13,4 +13,8 @@ export class SuitCalledModalComponent {
 	visible: boolean = false;
 
 	readonly suits = getAllSuits();
+
+	isRed(suit: Suit): boolean {
+		return suit === Suit.HEARTS || suit === Suit.DIAMS;
+	}
 }

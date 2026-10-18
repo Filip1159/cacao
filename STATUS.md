@@ -29,6 +29,7 @@ Everything planned for a simple player-vs-bot game is implemented. The checklist
 - [x] Status line explaining what to do, highlighted active hand, disabled controls on the bot's turn
 - [x] Buttons: Pick card (or click the deck), Miss turn, End turn, Macau!, New game, Rules; bot difficulty select
 - [x] Dialogs: rank picker, suit picker, game over, rules
+- [x] Playable cards are lifted with a glow, the others are dimmed; the draw pile pulses when there is nothing to play
 - [x] Responsive layout (cards shrink under 600 px), card deal animation (disabled with `prefers-reduced-motion`)
 
 ## Quality
@@ -44,4 +45,6 @@ Everything planned for a simple player-vs-bot game is implemented. The checklist
 ## Possible next steps
 
 - Let the human catch the bot when it forgets to say Macau (the bot always says it).
+- UI: show the bot's move. Its card just appears on the discard pile after the one-second pause; slide it from the opponent's hand to the pile and show "Bot is thinking…" in the status line during the delay.
+- UI: finish the table's finish. The rules dialog and the "Deck: N" label (off-centre under the draw pile) still use the old look, and on a phone there is a large empty gap between the opponent's hand and the piles.
 - Hot-seat or networked play, game history and similar features are out of scope.

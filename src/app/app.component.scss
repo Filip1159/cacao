@@ -9,18 +9,81 @@
 	flex-direction: row;
 	align-items: center;
 	justify-content: space-between;
-	padding: 6px 16px;
-	background-color: #f0f0f0;
-	font-family: "Segoe UI", serif;
+	gap: 8px;
+	padding: 8px 16px;
+	// the rail of the table
+	background-color: var(--felt-deep);
+	border-bottom: 2px solid var(--accent);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 
 	&__title {
 		margin: 0;
-		font-size: 24px;
+		font: 800 28px/1 var(--font-display);
+		color: var(--accent);
 	}
 
 	&__buttons {
 		display: flex;
+		align-items: center;
 		gap: 8px;
+
+		button {
+			padding: 6px 10px;
+			white-space: nowrap;
+		}
+	}
+
+	&__difficulty {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font: 600 15px var(--font-ui);
+		color: var(--cream);
+
+		select {
+			padding: 5px 8px;
+			border: 1px solid var(--ink);
+			border-radius: 8px;
+			background-color: var(--cream);
+			color: var(--ink);
+			font: 600 15px var(--font-ui);
+			box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+			cursor: pointer;
+
+			&:focus-visible {
+				outline: 3px solid aqua;
+				outline-offset: 2px;
+			}
+		}
+	}
+}
+
+@media (max-width: 420px) {
+	.header {
+		padding: 8px 10px;
+
+		&__title {
+			font-size: 22px;
+		}
+
+		&__buttons {
+			gap: 6px;
+
+			button {
+				padding: 6px 8px;
+				font-size: 14px;
+			}
+		}
+
+		&__difficulty {
+			gap: 4px;
+			font-size: 14px;
+
+			select {
+				padding: 5px 4px;
+				font-size: 14px;
+			}
+		}
 	}
 }
 

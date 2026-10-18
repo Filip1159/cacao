@@ -8,6 +8,9 @@
 				#card
 				[card]="c"
 				(click)="onCardClick(c)"
+				[class.hand__card--playable]="
+					game.isLegalMove(c) && game.isMyTurn()
+				"
 				[disabled]="!game.isLegalMove(c) || !game.isMyTurn()"
 			></app-card>
 		}
@@ -22,7 +25,11 @@
 		@if (game.isChaining()) {
 			<button (click)="game.endTurn()">End turn</button>
 		}
-		<button (click)="game.callMacau()" [disabled]="!game.macauPending()">
+		<button
+			class="btn-primary"
+			(click)="game.callMacau()"
+			[disabled]="!game.macauPending()"
+		>
 			Macau!
 		</button>
 	</div>

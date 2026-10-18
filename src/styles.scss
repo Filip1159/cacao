@@ -1,6 +1,19 @@
+:root {
+	--felt: #2e69d9;
+	--felt-deep: #14346f;
+	--cream: #ebedba;
+	--accent: #fcc235;
+	--accent-strong: #e6a800;
+	--panel: #f0f0f0;
+	--danger: #a7381f;
+	--ink: #1d1d1d;
+	--font-ui: "Figtree", "Segoe UI", system-ui, sans-serif;
+	--font-display: "Fraunces", Georgia, serif;
+}
+
 body {
 	margin: 0;
-	background-color: #2e69d9;
+	background-color: var(--felt);
 	height: 100vh;
 	display: flex;
 	flex-direction: column;
@@ -11,4 +24,56 @@ body {
 app-root {
 	display: block;
 	height: 100%;
+}
+
+button {
+	padding: 6px 14px;
+	border: 1px solid var(--ink);
+	border-radius: 8px;
+	background-color: var(--panel);
+	color: var(--ink);
+	font:
+		600 15px "Segoe UI",
+		sans-serif;
+	box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+	cursor: pointer;
+	transition:
+		transform 0.1s,
+		background-color 0.1s,
+		box-shadow 0.1s;
+
+	&:hover:not(:disabled) {
+		background-color: #f6f7d6;
+		transform: translateY(-1px);
+		box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+	}
+
+	&:active:not(:disabled) {
+		transform: translateY(1px);
+		box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+	}
+
+	&:focus-visible {
+		outline: 3px solid aqua;
+		outline-offset: 2px;
+	}
+
+	&:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	&.btn-primary {
+		background-color: var(--accent);
+
+		&:hover:not(:disabled) {
+			background-color: var(--accent-strong);
+		}
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	button {
+		transition: none;
+	}
 }

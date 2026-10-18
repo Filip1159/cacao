@@ -542,6 +542,19 @@ describe("SuitCalledModalComponent", () => {
 		buttons[2].click();
 		expect(emitted).toEqual([Suit.SPADES]);
 	});
+
+	it("colours only hearts and diamonds red", () => {
+		const fixture = TestBed.createComponent(SuitCalledModalComponent);
+		fixture.detectChanges();
+		const buttons: HTMLButtonElement[] = Array.from(
+			fixture.nativeElement.querySelectorAll("button"),
+		);
+		expect(
+			buttons.map((b) =>
+				b.classList.contains("suit-called-modal__option--red"),
+			),
+		).toEqual([true, true, false, false]);
+	});
 });
 
 describe("RulesModalComponent", () => {

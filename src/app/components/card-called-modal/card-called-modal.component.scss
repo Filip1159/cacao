@@ -1,21 +1,36 @@
-.card-called-modal {
-	display: none;
-	position: fixed;
-	z-index: 1;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background-color: rgba(0, 0, 0, 0.6);
+@use "../modal";
 
-	&__content {
-		background-color: #a7381f;
-		margin: 100px auto;
-		padding: 20px;
-		width: 40%;
+@include modal.picker("card-called-modal", 3);
+
+// a casino chip: a striped rim around a cream face
+.card-called-modal__option {
+	position: relative;
+	isolation: isolate;
+	width: 68px;
+	height: 68px;
+	padding: 0;
+	border: none;
+	border-radius: 50%;
+	background: repeating-conic-gradient(
+		#fff 0 20deg,
+		var(--danger) 20deg 40deg
+	);
+	font: 800 26px var(--font-display);
+
+	&::before {
+		content: "";
+		position: absolute;
+		inset: 8px;
+		z-index: -1;
+		border-radius: 50%;
+		background-color: var(--cream);
+		box-shadow: inset 0 0 0 2px var(--danger);
 	}
 
-	&--visible {
-		display: block;
+	&:hover:not(:disabled) {
+		background: repeating-conic-gradient(
+			#fff 0 20deg,
+			var(--danger) 20deg 40deg
+		);
 	}
 }

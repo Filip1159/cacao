@@ -2,10 +2,24 @@
 	class="card-called-modal"
 	[class]="{ 'card-called-modal--visible': visible }"
 >
-	<div class="card-called-modal__content">
-		<span>Select rank you want to call:</span>
-		@for (rank of ranks; track rank) {
-			<button (click)="onSelected.emit(rank)">{{ rank }}</button>
-		}
+	<div
+		class="card-called-modal__content"
+		role="dialog"
+		aria-label="Call a rank"
+	>
+		<h2 class="card-called-modal__title">Call a rank</h2>
+		<p class="card-called-modal__hint">
+			The next player has to play this rank.
+		</p>
+		<div class="card-called-modal__options">
+			@for (rank of ranks; track rank) {
+				<button
+					class="card-called-modal__option"
+					(click)="onSelected.emit(rank)"
+				>
+					{{ rank }}
+				</button>
+			}
+		</div>
 	</div>
 </div>

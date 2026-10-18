@@ -1,5 +1,8 @@
 <button
 	class="draw-pile"
+	[class.draw-pile--hint]="
+		game.isMyTurn() && game.canHumanPick() && !game.hasCounter()
+	"
 	[attr.aria-label]="'Draw pile, ' + game.deckSize() + ' cards'"
 	[disabled]="!game.canHumanPick()"
 	(click)="game.pick()"

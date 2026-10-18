@@ -2,10 +2,25 @@
 	class="suit-called-modal"
 	[class]="{ 'suit-called-modal--visible': visible }"
 >
-	<div class="suit-called-modal__content">
-		<span>Select suit you want to call:</span>
-		@for (suit of suits; track suit) {
-			<button (click)="onSelected.emit(suit)">{{ suit }}</button>
-		}
+	<div
+		class="suit-called-modal__content"
+		role="dialog"
+		aria-label="Call a suit"
+	>
+		<h2 class="suit-called-modal__title">Call a suit</h2>
+		<p class="suit-called-modal__hint">
+			The next player has to play this suit.
+		</p>
+		<div class="suit-called-modal__options">
+			@for (suit of suits; track suit) {
+				<button
+					class="suit-called-modal__option"
+					[class.suit-called-modal__option--red]="isRed(suit)"
+					(click)="onSelected.emit(suit)"
+				>
+					{{ suit }}
+				</button>
+			}
+		</div>
 	</div>
 </div>

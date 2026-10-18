@@ -21,6 +21,8 @@
 	}
 
 	&__cards {
+		// room for the lifted cards
+		padding-top: 20px;
 		display: flex;
 		flex-direction: row;
 		flex-wrap: wrap;
@@ -28,8 +30,31 @@
 		gap: 4px;
 	}
 
+	// playable cards are lifted and glow, the others stay down
+	&__card {
+		display: block;
+		transition: transform 0.12s ease-out;
+
+		&--playable {
+			transform: translateY(-12px);
+			filter: drop-shadow(0 0 6px var(--accent));
+
+			&:hover {
+				transform: translateY(-20px);
+			}
+		}
+	}
+
 	&__actions {
 		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
 		gap: 8px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.hand__card {
+		transition: none;
 	}
 }

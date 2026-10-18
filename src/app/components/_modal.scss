@@ -1,0 +1,70 @@
+/// The card-stock dialog shared by the pickers that ask for a rank or a suit.
+@mixin picker($block, $columns) {
+	.#{$block} {
+		display: none;
+		position: fixed;
+		z-index: 1;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		align-items: center;
+		justify-content: center;
+		background-color: rgba(10, 26, 60, 0.7);
+
+		&--visible {
+			display: flex;
+		}
+
+		&--visible &__content {
+			animation: picker-in 0.18s ease-out;
+		}
+
+		&__content {
+			box-sizing: border-box;
+			width: min(360px, calc(100% - 32px));
+			padding: 28px 24px 24px;
+			border: 1px solid var(--ink);
+			border-radius: 12px;
+			background-color: var(--cream);
+			// a printed frame, like the border on a playing card
+			box-shadow:
+				inset 0 0 0 7px var(--cream),
+				inset 0 0 0 8px var(--danger),
+				0 16px 40px rgba(0, 0, 0, 0.55);
+			text-align: center;
+		}
+
+		&__title {
+			margin: 0;
+			font: 800 28px/1.1 var(--font-display);
+			color: var(--danger);
+		}
+
+		&__hint {
+			margin: 6px 0 20px;
+			font: 500 15px var(--font-ui);
+			color: var(--ink);
+		}
+
+		&__options {
+			display: grid;
+			grid-template-columns: repeat($columns, 1fr);
+			gap: 12px;
+			justify-items: center;
+		}
+	}
+}
+
+@keyframes picker-in {
+	from {
+		opacity: 0;
+		transform: scale(0.94) translateY(8px);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	[class$="--visible"] > [class$="__content"] {
+		animation: none;
+	}
+}
