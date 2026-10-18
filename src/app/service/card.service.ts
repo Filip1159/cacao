@@ -21,6 +21,10 @@ export class CardService {
 		this.discardPile = [this.pickBasicCardFromTop()];
 	}
 
+	reset(): void {
+		this.init();
+	}
+
 	dealCards(players: Player[]): void {
 		for (let i = 0; i < 5; i++) {
 			for (let player of players) {

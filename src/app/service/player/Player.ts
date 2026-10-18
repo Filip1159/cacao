@@ -21,6 +21,14 @@ export abstract class Player {
 		this.chosenMove = -1;
 	}
 
+	reset(): void {
+		this.cards.length = 0;
+		this.state = State.WAITING_FOR_CARD;
+		this.chosenMove = -1;
+		this.chosenRank = undefined;
+		this.chosenSuit = undefined;
+	}
+
 	addCard(card: Card): void {
 		this.cards.push(card);
 	}
@@ -28,6 +36,10 @@ export abstract class Player {
 	drawCard(): void {
 		const card = this.cardService.pickCardFromTop();
 		if (card) this.addCard(card);
+	}
+
+	hasCounter(): boolean {
+		return this.cards.some((card) => this.gameService.isLegalMove(card));
 	}
 
 	removeCard(cardIndex: number): Card {
@@ -40,6 +52,8 @@ export abstract class Player {
 			this.playCard();
 		} else if (this.state === State.MISSING) {
 			this.gameService.afterCardPlayed(null);
+		} else if (this.state === State.CARD_PICKING && this.hasCounter()) {
+			this.playCard();
 		} else if (this.state === State.CARD_PICKING) {
 			for (let i = 0; i < this.gameService.cardsToPick; i++)
 				this.drawCard();

@@ -61,24 +61,24 @@ A card is playable if it matches the rank or suit of the top of the discard pile
 ## 3. To do (needed for a complete player-vs-bot game)
 
 ### Core rules
-- [ ] **Win/lose condition**: game ends when a player's hand is empty (check after every play)
+- [x] **Win/lose condition**: game ends when a player's hand is empty (`GameService.winner` signal, checked after every play)
 - [x] **Ace**: playing an Ace lets the player call a suit; next player must follow that suit (`SUIT_CALLED` state, `suitCalled` in `GameService`, suit-picker modal, called rank/suit shown under the discard pile)
-- [ ] **Counter-playing penalty cards**: allow playing another 2/3/K (same rank, or per chosen rule set) while in `CARD_PICKING`, stacking the penalty instead of drawing
+- [x] **Counter-playing penalty cards**: while in `CARD_PICKING` a penalty card of the same rank (2, 3, K♥/K♠) can be played to pass the stacked penalty on (`penaltyOf` in `Card.ts`; pending count shown under the discard pile)
 - [ ] **Counter a 4** with another 4 (stacking misses) – decide if included
-- [ ] **Reshuffle**: when the draw deck is empty, shuffle the discard pile (except top card) back into the deck
-- [ ] Prevent drawing more than the cards available (edge case when both deck and discard are exhausted)
-- [ ] Starting card handling: ensure starting card is never 2/3/4/J/Q/A/K♥/K♠ (currently excludes ≥ J, which matches)
+- [x] **Reshuffle**: when the draw deck is empty, shuffle the discard pile (except top card) back into the deck
+- [x] Prevent drawing more than the cards available (edge case when both deck and discard are exhausted)
+- [x] Starting card handling: ensure starting card is never 2/3/4/J/Q/A/K♥/K♠ (currently excludes ≥ J, which matches)
 
 ### Bot
-- [ ] Choose the rank to call when playing a Jack (e.g. most-frequent rank in its hand, or random 5–10)
+- [x] Choose the rank to call when playing a Jack (e.g. most-frequent rank in its hand, or random 5–10)
 - [x] Choose the suit to call when playing an Ace (suit it holds most of)
 - [ ] Basic strategy instead of "first legal card" (e.g. prefer attack cards when the human has few cards, save Jacks/Aces) – optional but cheap to add
-- [ ] Bot should defend against penalty cards if counter-play is added
+- [x] Bot defends against penalty cards by countering when it can
 
 ### UI / UX
-- [ ] Game-over screen (win/lose message) and **New game / Restart** button (re-create `CardService`/`GameService` state)
+- [x] Game-over screen (win/lose message) and **New game** button (`GameService.restart()`, button in the header and in the game-over dialog)
 - [ ] Visible draw pile (face-down stack with remaining count) – clicking it picks a card
-- [ ] Show active effect on the table: called rank, called suit, pending number of cards to pick, "you miss a turn"
+- [ ] Show active effect on the table: called rank, called suit and pending cards to pick are shown; "you miss a turn" still missing
 - [ ] Clear indication of whose turn it is (and disable all controls during the bot's turn)
 - [ ] Replace debug text (`WAITING_FOR_CARD` etc.) with friendly messages / remove it
 - [ ] Remove placeholder content: header "Macau game server", 5× "Lorem ipsum" nav items

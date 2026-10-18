@@ -1,0 +1,10 @@
+@if (gameService.winner() !== null) {
+	<div class="game-over">
+		<div class="game-over__content">
+			<h2 class="game-over__message">
+				{{ playerWon ? "You won!" : "You lost" }}
+			</h2>
+			<button (click)="gameService.restart()">New game</button>
+		</div>
+	</div>
+}

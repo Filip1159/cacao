@@ -9,7 +9,8 @@ import { Game, startGame } from "./support/game";
  *   1     8♠   2♥ J♣ 2♦ A♣ 5♣        no playable card; bot answers a draw with 2♠
  *   2     5♦   3♦ 5♣ J♦ 10♠ 9♠       3♦, 5♣, J♦ playable; bot has no 7
  *   3     5♥   Q♠ 9♣ K♥ 10♥ 4♠       K♥ playable
- *   5     6♠   6♥ 9♠ K♣ 8♠ 2♠        2♠ playable
+ *   5     6♠   6♥ 9♠ K♣ 8♠ 2♠        2♠ playable; the bot passes it back with 2♥
+ *   133   5♠   9♣ 4♣ 2♠ 8♦ 2♥        2♠ playable; the bot has no 2
  *   8     10♥  7♠ 10♠ 10♦ Q♥ 4♥      4♥ playable
  *   21    7♦   K♣ 3♣ 8♦ 9♥ K♦        K♦ playable; bot answers with 4♦
  *   33    7♠   2♥ A♠ 2♠ 4♣ 9♠        A♠ playable
@@ -114,14 +115,35 @@ test.describe("human turn", () => {
 
 test.describe("special cards", () => {
 	test("2 forces the bot to draw 2 cards", async ({ page }) => {
-		const game = await startGame(page, 5);
+		const game = await startGame(page, 133);
 
-		await game.play(4); // 2♠
+		await game.play(2); // 2♠
 
 		await expect(game.opponentCards).toHaveCount(7, {
 			timeout: BOT_DELAY,
 		});
 		await expectMyTurn(game);
+	});
+
+	test("the bot passes a 2 back, so the human has to pick 4 cards", async ({
+		page,
+	}) => {
+		const game = await startGame(page, 5);
+
+		await game.play(4); // 2♠; the bot answers with 2♥
+
+		await expect(game.playerCards).toHaveCount(4);
+		await expect(game.opponentCards).toHaveCount(4, {
+			timeout: BOT_DELAY,
+		});
+		expect(await game.top()).toBe("2♥");
+		await expect(game.discardPile).toContainText("Cards to pick: 4");
+		await expectMyTurn(game);
+		expect(await game.enabledIndexes()).toEqual([]);
+
+		await game.pickCardButton.click();
+
+		await expect(game.playerCards).toHaveCount(8);
 	});
 
 	test("K♥ forces the bot to draw 5 cards", async ({ page }) => {
@@ -243,12 +265,35 @@ test.describe("penalties against the human", () => {
 		await expectMyTurn(game);
 		await expect(game.playerCards).toHaveCount(6);
 		await expect(game.missTurnButton).toBeDisabled();
-		// none of the cards can be played, whatever they are
-		expect(await game.enabledIndexes()).toEqual([]);
+		await expect(game.discardPile).toContainText("Cards to pick: 2");
+		// only the two 2s in hand (2♥, 2♦) can be played to pass the penalty on
+		expect(await game.enabledIndexes()).toEqual([0, 2]);
 
 		await game.pickCardButton.click();
 
 		await expect(game.playerCards).toHaveCount(8);
+	});
+
+	test("the human can pass a penalty back with a card of the same rank", async ({
+		page,
+	}) => {
+		const game = await startGame(page, 1);
+		await game.pickCardButton.click();
+		await expect(game.playerState).toHaveText("CARD_PICKING", {
+			timeout: BOT_DELAY,
+		});
+		await expectMyTurn(game);
+
+		await game.play(0); // 2♥ on the bot's 2♠
+
+		await expect(game.playerCards).toHaveCount(5);
+		expect(await game.top()).toBe("2♥");
+		await expect(game.discardPile).toContainText("Cards to pick: 4");
+		// the bot has no 2 and takes both penalties: 4 + 2 + 2 cards
+		await expect(game.opponentCards).toHaveCount(8, {
+			timeout: BOT_DELAY,
+		});
+		await expectMyTurn(game);
 	});
 
 	test("after the bot plays a 4 the human can only miss the turn", async ({
@@ -297,5 +342,69 @@ test.describe("penalties against the human", () => {
 		});
 
 		await expect(game.pickCardButton).toBeDisabled();
+	});
+});
+
+test.describe("game over and restart", () => {
+	test("the human wins by playing the last card", async ({ page }) => {
+		const game = await startGame(page, 2);
+		await expect(game.gameOver).toBeHidden();
+		await game.keepOnlyCard(1); // 5♣
+
+		await game.play(0);
+
+		await expect(game.gameOver).toContainText("You won!");
+		await expect(game.playerCards).toHaveCount(0);
+		await expect(game.pickCardButton).toBeDisabled();
+	});
+
+	test("the bot wins by playing its last card", async ({ page }) => {
+		const game = await startGame(page, 2);
+		await game.setOpponentHand([{ rank: 6, suit: "♣" }]);
+
+		await game.play(1); // 5♣, so 6♣ is playable for the bot
+
+		await expect(game.gameOver).toBeHidden();
+		await expect(game.gameOver).toContainText("You lost", {
+			timeout: BOT_DELAY,
+		});
+		await expect(game.opponentCards).toHaveCount(0);
+		expect(await game.top()).toBe("6♣");
+	});
+
+	test("New game in the game-over dialog deals a fresh game", async ({
+		page,
+	}) => {
+		const game = await startGame(page, 2);
+		await game.keepOnlyCard(1);
+		await game.play(0);
+		await expect(game.gameOver).toBeVisible();
+
+		await game.gameOver.getByRole("button", { name: "New game" }).click();
+
+		await expect(game.gameOver).toBeHidden();
+		await expect(game.playerCards).toHaveCount(5);
+		await expect(game.opponentCards).toHaveCount(5);
+		await expect(game.pickCardButton).toBeEnabled();
+		await expect(game.missTurnButton).toBeDisabled();
+	});
+
+	test("New game in the header restarts a game in progress and cancels the bot's move", async ({
+		page,
+	}) => {
+		const game = await startGame(page, 2);
+		await game.play(1); // the bot is about to answer
+		await expect(game.playerCards).toHaveCount(4);
+
+		await game.newGameButton.click();
+
+		await expect(game.playerCards).toHaveCount(5);
+		await expect(game.opponentCards).toHaveCount(5);
+		await expect(game.pickCardButton).toBeEnabled();
+		const top = await game.top();
+		await page.waitForTimeout(1500);
+		await expect(game.opponentCards).toHaveCount(5);
+		expect(await game.top()).toBe(top);
+		await expect(game.pickCardButton).toBeEnabled();
 	});
 });

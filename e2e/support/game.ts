@@ -30,6 +30,8 @@ export class Game {
 	readonly rankModal: Locator;
 	readonly suitModal: Locator;
 	readonly discardPile: Locator;
+	readonly gameOver: Locator;
+	readonly newGameButton: Locator;
 
 	constructor(readonly page: Page) {
 		this.playerCards = page.locator("app-player app-card");
@@ -42,6 +44,8 @@ export class Game {
 		this.rankModal = page.locator(".card-called-modal");
 		this.suitModal = page.locator(".suit-called-modal");
 		this.discardPile = page.locator("app-discard-pile");
+		this.gameOver = page.locator(".game-over");
+		this.newGameButton = page.locator(".header__restart");
 	}
 
 	/** Human-readable label of a card element, e.g. "10♠". */
@@ -78,6 +82,43 @@ export class Game {
 		for (let i = 0; i < count; i++)
 			if (await this.isEnabled(i)) result.push(i);
 		return result;
+	}
+
+	/**
+	 * Shortens the human's hand to a single card (dev-mode debug API), so one
+	 * move ends the game.
+	 */
+	async keepOnlyCard(index: number): Promise<void> {
+		await this.page.evaluate((i) => {
+			const ng = (window as any).ng;
+			const cards = ng.getComponent(
+				document.querySelector("app-player"),
+			).cards;
+			const keep = cards[i];
+			cards.length = 0;
+			cards.push(keep);
+			ng.applyChanges(document.querySelector("app-player"));
+		}, index);
+	}
+
+	/** Replaces the bot's hand with the given cards. */
+	async setOpponentHand(
+		cards: { rank: number; suit: string }[],
+	): Promise<void> {
+		await this.page.evaluate((newCards) => {
+			const ng = (window as any).ng;
+			const hand = ng.getComponent(
+				document.querySelector("app-opponent"),
+			).cards;
+			hand.length = 0;
+			hand.push(
+				...newCards.map((c) => ({
+					rank: { value: c.rank, toString: () => String(c.rank) },
+					suit: c.suit,
+				})),
+			);
+			ng.applyChanges(document.querySelector("app-opponent"));
+		}, cards);
 	}
 
 	async play(index: number): Promise<void> {

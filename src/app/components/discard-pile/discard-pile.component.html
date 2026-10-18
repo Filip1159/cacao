@@ -1,4 +1,7 @@
 <app-card [card]="this.gameService.cardService.discardPileTop"></app-card>
+@if (gameService.cardsToPick > 0) {
+	<span class="call">Cards to pick: {{ gameService.cardsToPick }}</span>
+}
 @if (gameService.cardCalled !== null) {
 	<span class="call">Called rank: {{ gameService.cardCalled }}</span>
 }

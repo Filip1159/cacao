@@ -96,6 +96,10 @@ export class PlayerComponent implements OnInit {
 	turn$ = this.gameService.turn;
 
 	isPickCardDisabled(turn: Turn | null): boolean {
-		return this.doesMissTurn() || turn !== Turn.ME;
+		return (
+			this.doesMissTurn() ||
+			turn !== Turn.ME ||
+			this.gameService.winner() !== null
+		);
 	}
 }

@@ -10,6 +10,7 @@ import { State } from "../model/enum/State";
 import { Turn } from "../model/enum/Turn";
 import { PlayerComponent } from "../components/players/player/player.component";
 import { SuitCalledModalComponent } from "../components/suit-called-modal/suit-called-modal.component";
+import { GameOverComponent } from "../components/game-over/game-over.component";
 import { CardCalledModalComponent } from "../components/card-called-modal/card-called-modal.component";
 
 const card = (rank: number, suit: Suit): Card => ({
@@ -108,6 +109,23 @@ describe("Game logic", () => {
 		it("rejects every card while the player has to pick cards", () => {
 			human.state = State.CARD_PICKING;
 			expect(gameService.isLegalMove(card(9, Suit.SPADES))).toBeFalse();
+		});
+
+		it("while picking cards only accepts a penalty card of the same rank", () => {
+			human.state = State.CARD_PICKING;
+			cardService.setDiscardPile([card(2, Suit.HEARTS)]);
+			expect(gameService.isLegalMove(card(2, Suit.SPADES))).toBeTrue();
+			expect(gameService.isLegalMove(card(3, Suit.HEARTS))).toBeFalse();
+			expect(gameService.isLegalMove(card(9, Suit.HEARTS))).toBeFalse();
+
+			cardService.setDiscardPile([card(RankCharacter.King, Suit.SPADES)]);
+			expect(
+				gameService.isLegalMove(card(RankCharacter.King, Suit.HEARTS)),
+			).toBeTrue();
+			// K♦ and K♣ carry no penalty, so they can't pass one on
+			expect(
+				gameService.isLegalMove(card(RankCharacter.King, Suit.DIAMS)),
+			).toBeFalse();
 		});
 
 		it("rejects every card while the player misses a turn", () => {
@@ -212,7 +230,10 @@ describe("Game logic", () => {
 		});
 
 		it("the called suit is forgotten once the opponent has moved", () => {
-			setHand(human, [card(RankCharacter.Ace, Suit.CLUBS)]);
+			setHand(human, [
+				card(RankCharacter.Ace, Suit.CLUBS),
+				card(5, Suit.DIAMS),
+			]);
 			setHand(bot, [card(9, Suit.HEARTS), card(3, Suit.SPADES)]);
 			cardService.setDiscardPile([card(9, Suit.CLUBS)]);
 			human.chosenMove = 0;
@@ -223,6 +244,28 @@ describe("Game logic", () => {
 			expect(cardService.discardPileTop).toEqual(card(9, Suit.HEARTS));
 			expect(gameService.suitCalled).toBeNull();
 			expect(human.state).toBe(State.WAITING_FOR_CARD);
+		});
+
+		it("a countered penalty adds up for the next player", () => {
+			setHand(human, [card(2, Suit.SPADES), card(5, Suit.DIAMS)]);
+			cardService.setDiscardPile([card(2, Suit.HEARTS)]);
+			human.state = State.CARD_PICKING;
+			gameService.cardsToPick = 4;
+			human.chosenMove = 0;
+			human.makeAction();
+			expect(cardService.discardPileTop).toEqual(card(2, Suit.SPADES));
+			expect(bot.state).toBe(State.CARD_PICKING);
+			expect(gameService.cardsToPick).toBe(6);
+		});
+
+		it("drawing the penalty does not carry it over", () => {
+			setHand(human, [card(9, Suit.CLUBS)]);
+			human.state = State.CARD_PICKING;
+			gameService.cardsToPick = 4;
+			human.makeAction();
+			expect(human.cards.length).toBe(5);
+			expect(bot.state).toBe(State.WAITING_FOR_CARD);
+			expect(gameService.cardsToPick).toBe(0);
 		});
 
 		it("playing a card moves it to the discard pile and passes the turn", () => {
@@ -338,6 +381,18 @@ describe("Game logic", () => {
 			);
 		});
 
+		it("counters a penalty with a card of the same rank", () => {
+			setHand(bot, [card(9, Suit.SPADES), card(3, Suit.CLUBS)]);
+			cardService.setDiscardPile([card(3, Suit.HEARTS)]);
+			bot.state = State.CARD_PICKING;
+			gameService.cardsToPick = 3;
+			bot.makeAction();
+			expect(cardService.discardPileTop).toEqual(card(3, Suit.CLUBS));
+			expect(bot.cards.length).toBe(1);
+			expect(human.state).toBe(State.CARD_PICKING);
+			expect(gameService.cardsToPick).toBe(6);
+		});
+
 		it("draws the penalty cards", () => {
 			setHand(bot, [card(9, Suit.SPADES)]);
 			bot.state = State.CARD_PICKING;
@@ -367,6 +422,90 @@ describe("Game logic", () => {
 		it("draws a single card when there is no penalty", () => {
 			component.pickCardFromStack();
 			expect(human.cards.length).toBe(2);
+		});
+	});
+
+	describe("game over", () => {
+		beforeEach(() => {
+			spyOn(bot, "makeAction");
+		});
+
+		it("nobody has won while both players hold cards", () => {
+			setHand(human, [card(8, Suit.CLUBS), card(5, Suit.DIAMS)]);
+			cardService.setDiscardPile([card(9, Suit.CLUBS)]);
+			human.chosenMove = 0;
+			human.playCard();
+			expect(gameService.winner()).toBeNull();
+		});
+
+		it("the human wins by playing the last card", () => {
+			setHand(human, [card(8, Suit.CLUBS)]);
+			cardService.setDiscardPile([card(9, Suit.CLUBS)]);
+			human.chosenMove = 0;
+			human.playCard();
+			expect(gameService.winner()).toBe(Turn.ME);
+			expect(cardService.discardPileTop).toEqual(card(8, Suit.CLUBS));
+		});
+
+		it("the bot wins by playing the last card", () => {
+			gameService.turn.next(Turn.OPPONENT);
+			(bot.makeAction as jasmine.Spy).and.callThrough();
+			setHand(bot, [card(8, Suit.CLUBS)]);
+			cardService.setDiscardPile([card(9, Suit.CLUBS)]);
+			bot.makeAction();
+			expect(gameService.winner()).toBe(Turn.OPPONENT);
+		});
+
+		it("the bot does not move after the human has won", () => {
+			setHand(human, [card(8, Suit.CLUBS)]);
+			cardService.setDiscardPile([card(9, Suit.CLUBS)]);
+			human.chosenMove = 0;
+			human.playCard();
+			jasmine.clock().tick(5000);
+			expect(bot.makeAction).not.toHaveBeenCalled();
+		});
+
+		it("no move is legal once the game is over", () => {
+			cardService.setDiscardPile([card(9, Suit.CLUBS)]);
+			gameService.winner.set(Turn.OPPONENT);
+			expect(gameService.isLegalMove(card(8, Suit.CLUBS))).toBeFalse();
+		});
+
+		it("restart deals a new game", () => {
+			setHand(human, [card(8, Suit.CLUBS)]);
+			cardService.setDiscardPile([card(9, Suit.CLUBS)]);
+			human.chosenMove = 0;
+			human.playCard();
+			human.state = State.MISSING;
+			gameService.cardsToPick = 3;
+			gameService.cardCalled = 7;
+			gameService.suitCalled = Suit.HEARTS;
+			const handRef = human.cards;
+
+			gameService.restart();
+
+			expect(gameService.winner()).toBeNull();
+			expect(gameService.turn.value).toBe(Turn.ME);
+			expect(human.cards.length).toBe(5);
+			expect(bot.cards.length).toBe(5);
+			expect(human.cards).toBe(handRef); // views keep their reference
+			expect(cardService.getDeck().length).toBe(41);
+			expect(cardService.getDiscardPile().length).toBe(1);
+			expect(human.state as State).toBe(State.WAITING_FOR_CARD);
+			expect(bot.state).toBe(State.WAITING_FOR_CARD);
+			expect(gameService.cardsToPick).toBe(0);
+			expect(gameService.cardCalled).toBeNull();
+			expect(gameService.suitCalled).toBeNull();
+		});
+
+		it("restart cancels the bot's pending move", () => {
+			setHand(human, [card(8, Suit.CLUBS), card(5, Suit.DIAMS)]);
+			cardService.setDiscardPile([card(9, Suit.CLUBS)]);
+			human.chosenMove = 0;
+			human.playCard(); // schedules the bot's reply
+			gameService.restart();
+			jasmine.clock().tick(5000);
+			expect(bot.makeAction).not.toHaveBeenCalled();
 		});
 	});
 
@@ -446,5 +585,37 @@ describe("SuitCalledModalComponent", () => {
 		]);
 		buttons[2].click();
 		expect(emitted).toEqual([Suit.SPADES]);
+	});
+});
+
+describe("GameOverComponent", () => {
+	beforeEach(() => {
+		TestBed.configureTestingModule({
+			providers: [{ provide: CardService, useClass: MockCardService }],
+		});
+	});
+
+	it("is hidden while the game is running", () => {
+		const fixture = TestBed.createComponent(GameOverComponent);
+		fixture.detectChanges();
+		expect(fixture.nativeElement.querySelector(".game-over")).toBeNull();
+	});
+
+	it("announces the winner and restarts the game", () => {
+		const gameService = TestBed.inject(GameService);
+		const fixture = TestBed.createComponent(GameOverComponent);
+
+		gameService.winner.set(Turn.ME);
+		fixture.detectChanges();
+		expect(fixture.nativeElement.textContent).toContain("You won!");
+
+		gameService.winner.set(Turn.OPPONENT);
+		fixture.detectChanges();
+		expect(fixture.nativeElement.textContent).toContain("You lost");
+
+		fixture.nativeElement.querySelector("button").click();
+		fixture.detectChanges();
+		expect(gameService.winner()).toBeNull();
+		expect(fixture.nativeElement.querySelector(".game-over")).toBeNull();
 	});
 });
