@@ -1,3 +1,5 @@
+@use "../modal";
+
 .game-over {
 	position: fixed;
 	z-index: 2;
@@ -5,27 +7,18 @@
 	left: 0;
 	width: 100%;
 	height: 100%;
-	background-color: rgba(0, 0, 0, 0.6);
+	background-color: rgba(10, 26, 60, 0.7);
 
 	&__content {
-		box-sizing: border-box;
-		background-color: var(--cream);
-		border: 1px solid var(--ink);
+		@include modal.card-stock;
 		margin: 100px auto;
-		padding: 24px;
+		padding: 28px 24px 24px;
 		width: min(360px, calc(100% - 32px));
-		border-radius: 16px;
-		box-shadow:
-			inset 0 0 0 7px var(--cream),
-			inset 0 0 0 8px var(--danger),
-			0 16px 40px rgba(0, 0, 0, 0.55);
-		font-family: var(--font-ui);
 		text-align: center;
 	}
 
 	&__message {
-		margin-top: 0;
-		font: 800 32px var(--font-display);
-		color: var(--danger);
+		@include modal.card-title(32px);
+		margin-bottom: 20px;
 	}
 }

@@ -12,10 +12,11 @@
 				the suit of the top card of the discard pile, or pick a card
 				from the deck.
 			</p>
-			<ul>
+			<ul class="rules__list">
 				@for (rule of rules; track rule.card) {
 					<li>
-						<strong>{{ rule.card }}</strong> – {{ rule.effect }}
+						<strong class="rules__card">{{ rule.card }}</strong
+						>{{ rule.effect }}
 					</li>
 				}
 			</ul>
@@ -23,7 +24,7 @@
 				A 2, 3 or penalty King can be passed back with a card of the
 				same rank, and a 4 with another 4; penalties then add up.
 			</p>
-			<button (click)="closed.emit()">Close</button>
+			<button class="btn-primary" (click)="closed.emit()">Close</button>
 		</div>
 	</div>
 }

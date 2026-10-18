@@ -33,8 +33,7 @@
 
 	&__count {
 		color: white;
-		font-family: "Segoe UI", sans-serif;
-		font-size: 16px;
+		font: 500 16px/24px var(--font-ui);
 	}
 }
 
@@ -48,5 +47,12 @@
 	.draw-pile--hint app-card-face-down {
 		animation: none;
 		filter: drop-shadow(0 0 8px var(--accent));
+	}
+}
+
+@media (max-width: 600px) {
+	app-card-face-down {
+		display: block;
+		zoom: 1.35;
 	}
 }

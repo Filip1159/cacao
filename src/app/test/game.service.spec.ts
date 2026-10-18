@@ -179,6 +179,22 @@ describe("GameService", () => {
 			expect(game.state().turn).toBe(Turn.ME);
 		});
 
+		it("is recorded as the one who played the top card", () => {
+			expect(game.lastPlayer()).toBe(Turn.ME);
+			game.patch({ discard: [card(6, Suit.CLUBS)] });
+			setHands(game, {
+				opponent: [card(6, Suit.HEARTS), card(7, Suit.HEARTS)],
+			});
+			jasmine.clock().tick(1100);
+			expect(game.top()).toEqual(card(6, Suit.HEARTS));
+			expect(game.lastPlayer()).toBe(Turn.OPPONENT);
+		});
+
+		it("does not change the last player when a card is only picked", () => {
+			jasmine.clock().tick(1100); // draws: nothing fits the 8♣
+			expect(game.lastPlayer()).toBe(Turn.ME);
+		});
+
 		it("follows the difficulty that is set", () => {
 			// easy never chains cards, so it can only play one of its 6s
 			game.difficulty.set(Difficulty.EASY);

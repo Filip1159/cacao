@@ -501,7 +501,7 @@ test.describe("table and controls", () => {
 
 		await game.play(1); // 5♣
 
-		await expect(game.status).toHaveText("Opponent's turn…");
+		await expect(game.status).toHaveText("Opponent is thinking…");
 		await expect(page.locator("#opponent_cards")).toHaveClass(
 			/hand--active/,
 		);

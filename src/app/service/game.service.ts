@@ -53,6 +53,8 @@ export class GameService {
 	readonly difficulty = signal<Difficulty>(Difficulty.NORMAL);
 	/** One-off message for the human, e.g. about a Macau penalty. */
 	readonly notice = signal<string | null>(null);
+	/** Who put the card on top of the discard pile last; the views animate it from that player's hand. */
+	readonly lastPlayer = signal<Turn | null>(null);
 
 	readonly top = computed(() => topOf(this._state()));
 	readonly deckSize = computed(() => this._state().deck.length);
@@ -132,6 +134,7 @@ export class GameService {
 	restart(): void {
 		this.botTimer?.unsubscribe();
 		this.notice.set(null);
+		this.lastPlayer.set(null);
 		this._state.set(newGame(this.shuffle));
 	}
 
@@ -145,6 +148,7 @@ export class GameService {
 		if (next === previous) return;
 		if (previous.turn === Turn.ME && next.turn !== Turn.ME)
 			this.notice.set(null);
+		if (topOf(next) !== topOf(previous)) this.lastPlayer.set(previous.turn);
 		this._state.set(next);
 		if (
 			next.winner === null &&

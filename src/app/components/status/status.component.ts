@@ -21,7 +21,7 @@ export class StatusComponent {
 		const state = this.game.state();
 		if (state.winner !== null) return "Game over";
 		if (state.macauPending) return "You have one card left – press Macau!";
-		if (state.turn === Turn.OPPONENT) return "Opponent's turn…";
+		if (state.turn === Turn.OPPONENT) return "Opponent is thinking…";
 		if (state.chain.length > 0)
 			return `Play another ${state.chain[0].rank} – or end your turn`;
 		const canCounter = this.game.hasCounter();

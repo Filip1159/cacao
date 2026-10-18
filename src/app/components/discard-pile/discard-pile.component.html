@@ -1,7 +1,7 @@
 <div class="table">
 	<app-draw-pile></app-draw-pile>
 	<div class="discard">
-		<app-card [card]="game.top()"></app-card>
+		<app-card [card]="game.top()" [origin]="origin"></app-card>
 		<div class="effects">
 			@let obligation = state().obligation;
 			@switch (obligation.kind) {
@@ -20,6 +20,9 @@
 				}
 				@case ("suit") {
 					<span class="call">Called suit: {{ obligation.suit }}</span>
+				}
+				@default {
+					<span class="caption">Discard pile</span>
 				}
 			}
 		</div>

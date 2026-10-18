@@ -1,3 +1,23 @@
+/// Card stock with a printed frame: the look of every dialog.
+@mixin card-stock {
+	box-sizing: border-box;
+	border: 1px solid var(--ink);
+	border-radius: 12px;
+	background-color: var(--cream);
+	box-shadow:
+		inset 0 0 0 7px var(--cream),
+		inset 0 0 0 8px var(--danger),
+		0 16px 40px rgba(0, 0, 0, 0.55);
+	font-family: var(--font-ui);
+}
+
+/// The title of a dialog.
+@mixin card-title($size: 28px) {
+	margin: 0;
+	font: 800 #{$size}/ 1.1 var(--font-display);
+	color: var(--danger);
+}
+
 /// The card-stock dialog shared by the pickers that ask for a rank or a suit.
 @mixin picker($block, $columns) {
 	.#{$block} {
@@ -21,24 +41,14 @@
 		}
 
 		&__content {
-			box-sizing: border-box;
+			@include card-stock;
 			width: min(360px, calc(100% - 32px));
 			padding: 28px 24px 24px;
-			border: 1px solid var(--ink);
-			border-radius: 12px;
-			background-color: var(--cream);
-			// a printed frame, like the border on a playing card
-			box-shadow:
-				inset 0 0 0 7px var(--cream),
-				inset 0 0 0 8px var(--danger),
-				0 16px 40px rgba(0, 0, 0, 0.55);
 			text-align: center;
 		}
 
 		&__title {
-			margin: 0;
-			font: 800 28px/1.1 var(--font-display);
-			color: var(--danger);
+			@include card-title;
 		}
 
 		&__hint {

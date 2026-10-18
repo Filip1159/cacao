@@ -13,15 +13,33 @@
 	gap: 4px;
 }
 
+// both piles have a caption of the same height, so the table does not jump
 .effects {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	min-height: 24px;
 }
 
-.call {
+.caption {
 	color: white;
-	font-family: "Segoe UI", sans-serif;
-	font-size: 16px;
-	font-weight: bold;
+	font: 500 16px var(--font-ui);
+	line-height: 24px;
+}
+
+// an effect in force: picking cards, missing turns, a called rank or suit
+.call {
+	padding: 0 12px;
+	border-radius: 12px;
+	background-color: var(--accent);
+	color: var(--ink);
+	font: 700 15px/24px var(--font-ui);
+}
+
+@media (max-width: 600px) {
+	// only two cards are shown here, so they can be bigger than in a hand
+	app-card {
+		display: block;
+		zoom: 1.35;
+	}
 }

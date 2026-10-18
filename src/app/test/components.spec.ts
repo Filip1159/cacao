@@ -69,6 +69,40 @@ describe("card animation", () => {
 		fixture.detectChanges();
 		expect(animate).toHaveBeenCalledTimes(1);
 	});
+
+	it("slides in from the origin when there is one", () => {
+		const animate = spyOn(Element.prototype, "animate");
+		const origin = document.createElement("div");
+		const fixture = TestBed.createComponent(CardComponent);
+		fixture.componentRef.setInput("card", card(5, Suit.CLUBS));
+		fixture.componentRef.setInput("origin", () => origin);
+		fixture.detectChanges();
+
+		fixture.componentRef.setInput("card", card(6, Suit.CLUBS));
+		fixture.detectChanges();
+		const [keyframes, options] = animate.calls.mostRecent().args as [
+			Keyframe[],
+			KeyframeAnimationOptions,
+		];
+		expect(keyframes[0]["transform"]).toContain("translate(");
+		expect(options.duration).toBe(450);
+	});
+
+	it("drops in from above when the origin has nothing to offer", () => {
+		const animate = spyOn(Element.prototype, "animate");
+		const fixture = TestBed.createComponent(CardComponent);
+		fixture.componentRef.setInput("card", card(5, Suit.CLUBS));
+		fixture.componentRef.setInput("origin", () => null);
+		fixture.detectChanges();
+
+		fixture.componentRef.setInput("card", card(6, Suit.CLUBS));
+		fixture.detectChanges();
+		const [, options] = animate.calls.mostRecent().args as [
+			Keyframe[],
+			KeyframeAnimationOptions,
+		];
+		expect(options.duration).toBe(250);
+	});
 });
 
 describe("CardFaceDownComponent", () => {
@@ -280,8 +314,9 @@ describe("table components", () => {
 			expect(element.querySelector(".discard .number")!.textContent).toBe(
 				"5",
 			);
-			expect(element.querySelector(".effects")!.textContent!.trim()).toBe(
-				"",
+			expect(element.querySelector(".call")).toBeNull();
+			expect(element.querySelector(".effects")!.textContent).toContain(
+				"Discard pile",
 			);
 
 			const effects = () =>
@@ -299,7 +334,8 @@ describe("table components", () => {
 			show({ kind: "suit", suit: Suit.HEARTS });
 			expect(effects()).toContain("Called suit: ♥");
 			show({ kind: "none" });
-			expect(effects().trim()).toBe("");
+			expect(element.querySelector(".call")).toBeNull();
+			expect(effects()).toContain("Discard pile");
 		});
 
 		it("follows the top card", () => {
@@ -332,7 +368,7 @@ describe("table components", () => {
 
 		it("says when it is the opponent's turn or the game is over", () => {
 			gameService.patch({ turn: Turn.OPPONENT });
-			expect(message()).toBe("Opponent's turn…");
+			expect(message()).toBe("Opponent is thinking…");
 			gameService.patch({ winner: Turn.OPPONENT });
 			expect(message()).toBe("Game over");
 		});
@@ -406,7 +442,7 @@ describe("table components", () => {
 			gameService.patch({ turn: Turn.OPPONENT });
 			fixture.detectChanges();
 			expect(fixture.nativeElement.textContent).toContain(
-				"Opponent's turn",
+				"Opponent is thinking",
 			);
 			expect(
 				fixture.nativeElement.querySelector(".status").dataset["turn"],
