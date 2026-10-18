@@ -50,6 +50,8 @@ export abstract class Player {
 		console.log(`[${Turn[this.gameService.turn.value]}] makeAction`);
 		if (this.state === State.WAITING_FOR_CARD) {
 			this.playCard();
+		} else if (this.state === State.MISSING && this.hasCounter()) {
+			this.playCard();
 		} else if (this.state === State.MISSING) {
 			this.gameService.afterCardPlayed(null);
 		} else if (this.state === State.CARD_PICKING && this.hasCounter()) {

@@ -21,6 +21,10 @@ export class CardService {
 		this.discardPile = [this.pickBasicCardFromTop()];
 	}
 
+	get deckSize(): number {
+		return this.deck.length;
+	}
+
 	reset(): void {
 		this.init();
 	}

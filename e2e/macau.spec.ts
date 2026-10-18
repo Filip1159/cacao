@@ -11,9 +11,11 @@ import { Game, startGame } from "./support/game";
  *   3     5♥   Q♠ 9♣ K♥ 10♥ 4♠       K♥ playable
  *   5     6♠   6♥ 9♠ K♣ 8♠ 2♠        2♠ playable; the bot passes it back with 2♥
  *   133   5♠   9♣ 4♣ 2♠ 8♦ 2♥        2♠ playable; the bot has no 2
- *   8     10♥  7♠ 10♠ 10♦ Q♥ 4♥      4♥ playable
+ *   8     10♥  7♠ 10♠ 10♦ Q♥ 4♥      4♥ playable; the bot passes it back with 4♦
+ *   15    9♦   K♣ Q♥ 6♣ 4♥ 4♦        4♦ playable; the bot has no 4
  *   21    7♦   K♣ 3♣ 8♦ 9♥ K♦        K♦ playable; bot answers with 4♦
  *   33    7♠   2♥ A♠ 2♠ 4♣ 9♠        A♠ playable
+ *   63    4♥   (after drawing) 3♦ 8♦ 2♦ 7♣ J♣ 4♣; the bot plays 4♥, we can pass it back with 4♣
  *   62    4♥   9♦ 2♦ 7♣ 9♣ 3♦ (+8♥)  after drawing, bot plays a 4
  */
 const BOT_DELAY = 5_000; // the bot waits ~1 s before acting
@@ -170,15 +172,15 @@ test.describe("special cards", () => {
 	});
 
 	test("4 makes the bot miss its turn", async ({ page }) => {
-		const game = await startGame(page, 8);
+		const game = await startGame(page, 15);
 
-		await game.play(4); // 4♥
+		await game.play(4); // 4♦
 		await expectBotsTurn(game);
 
 		// the bot neither plays nor draws, and the turn comes back to us
 		await expectMyTurn(game);
 		await expect(game.opponentCards).toHaveCount(5);
-		expect(await game.top()).toBe("4♥");
+		expect(await game.top()).toBe("4♦");
 	});
 
 	test("J asks for a rank; the bot must draw when it has none", async ({
@@ -226,7 +228,7 @@ test.describe("special cards", () => {
 			timeout: BOT_DELAY,
 		});
 		expect(await game.top()).toBe("A♥");
-		await expect(game.playerState).toHaveText("SUIT_CALLED");
+		await expect(game.status).toHaveText(/called ♦/);
 		await expect(game.discardPile).toContainText("Called suit: ♦");
 		await expectMyTurn(game);
 
@@ -259,7 +261,7 @@ test.describe("penalties against the human", () => {
 	}) => {
 		const game = await startGame(page, 1);
 		await game.pickCardButton.click();
-		await expect(game.playerState).toHaveText("CARD_PICKING", {
+		await expect(game.status).toHaveText(/pick \d+ cards/i, {
 			timeout: BOT_DELAY,
 		});
 		await expectMyTurn(game);
@@ -279,7 +281,7 @@ test.describe("penalties against the human", () => {
 	}) => {
 		const game = await startGame(page, 1);
 		await game.pickCardButton.click();
-		await expect(game.playerState).toHaveText("CARD_PICKING", {
+		await expect(game.status).toHaveText(/pick \d+ cards/i, {
 			timeout: BOT_DELAY,
 		});
 		await expectMyTurn(game);
@@ -301,7 +303,7 @@ test.describe("penalties against the human", () => {
 	}) => {
 		const game = await startGame(page, 62);
 		await game.pickCardButton.click();
-		await expect(game.playerState).toHaveText("MISSING", {
+		await expect(game.status).toHaveText(/miss a turn/i, {
 			timeout: BOT_DELAY,
 		});
 
@@ -312,7 +314,7 @@ test.describe("penalties against the human", () => {
 
 		// the miss is over: the bot moves, then it's our turn again
 		await expect(game.missTurnButton).toBeDisabled();
-		await expect(game.playerState).not.toHaveText("MISSING", {
+		await expect(game.status).not.toHaveText(/miss a turn/i, {
 			timeout: BOT_DELAY,
 		});
 		await expect(game.playerCards).toHaveCount(6);
@@ -321,11 +323,11 @@ test.describe("penalties against the human", () => {
 	test("Pick card is usable again after missing a turn", async ({ page }) => {
 		const game = await startGame(page, 62);
 		await game.pickCardButton.click();
-		await expect(game.playerState).toHaveText("MISSING", {
+		await expect(game.status).toHaveText(/miss a turn/i, {
 			timeout: BOT_DELAY,
 		});
 		await game.missTurnButton.click();
-		await expect(game.playerState).not.toHaveText("MISSING", {
+		await expect(game.status).not.toHaveText(/miss a turn/i, {
 			timeout: BOT_DELAY,
 		});
 
@@ -337,11 +339,60 @@ test.describe("penalties against the human", () => {
 	}) => {
 		const game = await startGame(page, 62);
 		await game.pickCardButton.click();
-		await expect(game.playerState).toHaveText("MISSING", {
+		await expect(game.status).toHaveText(/miss a turn/i, {
 			timeout: BOT_DELAY,
 		});
 
 		await expect(game.pickCardButton).toBeDisabled();
+	});
+
+	test("the bot passes a 4 back, so the human misses two turns in a row", async ({
+		page,
+	}) => {
+		const game = await startGame(page, 8);
+		await game.play(4); // 4♥; the bot answers with 4♦
+		await expect(game.status).toHaveText(/miss a turn/i, {
+			timeout: BOT_DELAY,
+		});
+		await expect(game.discardPile).toContainText("Turns to miss: 2");
+		expect(await game.top()).toBe("4♦");
+		expect(await game.enabledIndexes()).toEqual([]); // no 4 in hand
+		await expect(game.opponentCards).toHaveCount(4);
+
+		await game.missTurnButton.click();
+
+		// the bot moves once, then we still have to miss another turn
+		await expect(game.discardPile).toContainText("Turns to miss: 1", {
+			timeout: BOT_DELAY,
+		});
+		await expect(game.missTurnButton).toBeEnabled();
+		await game.missTurnButton.click();
+
+		await expect(game.status).not.toHaveText(/miss a turn/i, {
+			timeout: BOT_DELAY,
+		});
+		await expectMyTurn(game);
+		await expect(game.discardPile).not.toContainText("Turns to miss");
+	});
+
+	test("the human can pass a 4 back instead of missing a turn", async ({
+		page,
+	}) => {
+		const game = await startGame(page, 63);
+		await game.pickCardButton.click();
+		await expect(game.status).toHaveText(/miss a turn/i, {
+			timeout: BOT_DELAY,
+		});
+		expect(await game.enabledIndexes()).toEqual([5]); // 4♣ on 4♥
+
+		await game.play(5);
+
+		await expect(game.playerCards).toHaveCount(5);
+		expect(await game.top()).toBe("4♣");
+		await expect(game.discardPile).toContainText("Turns to miss: 2");
+		// the bot has no 4: it misses, we play, it misses again
+		await expectMyTurn(game);
+		await expect(game.opponentCards).toHaveCount(4);
 	});
 });
 
@@ -406,5 +457,132 @@ test.describe("game over and restart", () => {
 		await expect(game.opponentCards).toHaveCount(5);
 		expect(await game.top()).toBe(top);
 		await expect(game.pickCardButton).toBeEnabled();
+	});
+});
+
+test.describe("table and controls", () => {
+	test("has no placeholder content", async ({ page }) => {
+		await startGame(page, 1);
+
+		await expect(page.locator("body")).not.toContainText("Lorem ipsum");
+		await expect(page.locator("body")).not.toContainText("game server");
+	});
+
+	test("labels the hands with their card counts", async ({ page }) => {
+		const game = await startGame(page, 1);
+		await expect(page.locator("#player_cards")).toContainText(
+			"You · 5 cards",
+		);
+		await expect(page.locator("#opponent_cards")).toContainText(
+			"Opponent · 5 cards",
+		);
+
+		await game.pickCardButton.click(); // we draw, the bot plays its 2♠
+
+		await expect(page.locator("#player_cards")).toContainText(
+			"You · 6 cards",
+		);
+		await expect(page.locator("#opponent_cards")).toContainText(
+			"Opponent · 4 cards",
+			{ timeout: BOT_DELAY },
+		);
+	});
+
+	test("shows whose turn it is", async ({ page }) => {
+		const game = await startGame(page, 2);
+		await expect(game.status).toHaveText(
+			"Your turn – play a card or pick one",
+		);
+		await expect(page.locator("#player_cards")).toHaveClass(/hand--active/);
+
+		await game.play(1); // 5♣
+
+		await expect(game.status).toHaveText("Opponent's turn…");
+		await expect(page.locator("#opponent_cards")).toHaveClass(
+			/hand--active/,
+		);
+		await expect(page.locator("#player_cards")).not.toHaveClass(
+			/hand--active/,
+		);
+		await expectMyTurn(game);
+		await expect(game.status).toHaveText(/Your turn|called|pick|miss/i);
+	});
+
+	test("explains what the human has to do after the bot's call", async ({
+		page,
+	}) => {
+		const game = await startGame(page, 33);
+		await game.play(1); // A♠
+		await game.suitModal.getByRole("button", { name: "♥" }).click();
+
+		await expect(game.status).toHaveText(
+			"Opponent called ♦ – play that suit or pick a card",
+			{ timeout: BOT_DELAY },
+		);
+	});
+
+	test("the draw pile shows the deck size and draws a card when clicked", async ({
+		page,
+	}) => {
+		const game = await startGame(page, 2);
+		await expect(game.deckButton).toContainText("Deck: 41");
+		await expect(game.deckButton).toBeEnabled();
+
+		await game.deckButton.click();
+
+		await expect(game.playerCards).toHaveCount(6);
+		await expect(game.deckButton).toContainText("Deck: 40");
+		await expect(game.deckButton).toBeDisabled(); // the bot's turn
+		await expectMyTurn(game);
+	});
+
+	test("the draw pile draws the whole penalty", async ({ page }) => {
+		const game = await startGame(page, 1);
+		await game.pickCardButton.click();
+		await expect(game.status).toHaveText(/pick 2 cards/i, {
+			timeout: BOT_DELAY,
+		});
+
+		await game.deckButton.click();
+
+		await expect(game.playerCards).toHaveCount(8);
+	});
+
+	test("the rules dialog lists the card effects and can be closed", async ({
+		page,
+	}) => {
+		const game = await startGame(page, 1);
+		const dialog = page.getByRole("dialog", { name: "Rules" });
+		await expect(dialog).toBeHidden();
+
+		await game.rulesButton.click();
+
+		await expect(dialog).toBeVisible();
+		await expect(dialog).toContainText("Next player picks 2 cards");
+		await expect(dialog).toContainText("You call a suit");
+		await dialog.getByRole("button", { name: "Close" }).click();
+		await expect(dialog).toBeHidden();
+
+		await game.rulesButton.click();
+		await expect(dialog).toBeVisible();
+		await page.mouse.click(5, 5); // backdrop
+		await expect(dialog).toBeHidden();
+	});
+
+	test("fits a phone screen", async ({ page }) => {
+		await page.setViewportSize({ width: 375, height: 667 });
+		const game = await startGame(page, 1);
+
+		const overflow = await page.evaluate(
+			() => document.documentElement.scrollWidth - window.innerWidth,
+		);
+		expect(overflow).toBeLessThanOrEqual(0);
+		for (const locator of [
+			game.playerCards.first(),
+			game.playerCards.last(),
+			game.pickCardButton,
+			game.newGameButton,
+		])
+			await expect(locator).toBeInViewport();
 	});
 });

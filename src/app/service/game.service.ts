@@ -19,6 +19,8 @@ export class GameService {
 	cardCalled: number | null = null;
 	suitCalled: Suit | null = null;
 	cardsToPick: number = 0;
+	turnsToMiss: number = 0;
+	private pendingMiss: { player: Turn; left: number } | null = null;
 	winner = signal<Turn | null>(null);
 	private botTimer?: Subscription;
 
@@ -50,6 +52,21 @@ export class GameService {
 			this.turn.next(this.turn.value);
 			return;
 		}
+		const current = this.players[this.turn.value];
+		const stackedMisses =
+			card !== null &&
+			card.rank.value === 4 &&
+			current.state === State.MISSING
+				? this.turnsToMiss
+				: 0;
+		// a player who still has turns to miss gets them back after the
+		// other player has moved
+		const newPendingMiss =
+			card === null &&
+			current.state === State.MISSING &&
+			this.turnsToMiss > 1
+				? { player: this.turn.value, left: this.turnsToMiss - 1 }
+				: null;
 		const pending =
 			card !== null &&
 			this.players[this.turn.value].state === State.CARD_PICKING
@@ -59,6 +76,17 @@ export class GameService {
 		this.resetState();
 		if (card !== null) this.switchState(card, cardCalled, suitCalled);
 		this.cardsToPick += pending;
+		if (stackedMisses > 0) this.turnsToMiss += stackedMisses;
+		if (this.pendingMiss?.player === this.turn.value) {
+			if (
+				this.players[this.turn.value].state === State.WAITING_FOR_CARD
+			) {
+				this.players[this.turn.value].state = State.MISSING;
+				this.turnsToMiss = this.pendingMiss.left;
+			}
+			this.pendingMiss = null;
+		}
+		if (newPendingMiss) this.pendingMiss = newPendingMiss;
 		if (this.turn.value === Turn.OPPONENT) {
 			this.botTimer = timer(1000).subscribe(() =>
 				this.players[Turn.OPPONENT].makeAction(),
@@ -67,11 +95,29 @@ export class GameService {
 		console.log(`[${Turn[this.turn.value]}] after afterCardPlayed`);
 	}
 
+	canHumanPick(): boolean {
+		return (
+			this.winner() === null &&
+			this.turn.value === Turn.ME &&
+			this.players[Turn.ME].state !== State.MISSING
+		);
+	}
+
+	/** The human draws the pending penalty cards, or a single card. */
+	humanPicks(): void {
+		const human = this.players[Turn.ME];
+		const count = human.state === State.CARD_PICKING ? this.cardsToPick : 1;
+		for (let i = 0; i < count; i++) human.drawCard();
+		this.afterCardPlayed(null);
+	}
+
 	restart(): void {
 		this.botTimer?.unsubscribe();
 		this.cardService.reset();
 		this.players.forEach((player) => player.reset());
 		this.cardsToPick = 0;
+		this.turnsToMiss = 0;
+		this.pendingMiss = null;
 		this.cardCalled = null;
 		this.suitCalled = null;
 		this.winner.set(null);
@@ -91,7 +137,12 @@ export class GameService {
 			return this.cardCalled === card.rank.value;
 		if (this.players[this.turn.value].state === State.SUIT_CALLED)
 			return this.suitCalled === card.suit;
-		if (this.players[this.turn.value].state === State.MISSING) return false;
+		if (this.players[this.turn.value].state === State.MISSING)
+			// a 4 passes the miss on to the other player
+			return (
+				card.rank.value === 4 &&
+				this.cardService.discardPileTop.rank.value === 4
+			);
 		return (
 			card.rank.value === this.cardService.discardPileTop.rank.value ||
 			card.suit === this.cardService.discardPileTop.suit
@@ -108,6 +159,7 @@ export class GameService {
 		switch (card.rank.value) {
 			case 4:
 				this.players[this.turn.value].state = State.MISSING;
+				this.turnsToMiss = 1;
 				break;
 			case RankCharacter.Jack:
 				this.players[this.turn.value].state = State.CARD_CALLED;
@@ -127,6 +179,7 @@ export class GameService {
 	private resetState(): void {
 		this.players[this.turn.value].state = State.WAITING_FOR_CARD;
 		this.cardsToPick = 0;
+		this.turnsToMiss = 0;
 		this.cardCalled = null;
 		this.suitCalled = null;
 	}

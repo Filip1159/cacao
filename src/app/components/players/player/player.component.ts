@@ -2,7 +2,7 @@ import { Component, OnInit } from "@angular/core";
 import { Card } from "../../../model/Card";
 import { GameService } from "../../../service/game.service";
 import { HumanPlayer } from "../../../service/player/HumanPlayer";
-import { State, stateToString } from "../../../model/enum/State";
+import { State } from "../../../model/enum/State";
 import { Turn } from "../../../model/enum/Turn";
 import { RankCharacter } from "../../../model/Rank";
 import { Suit } from "../../../model/Suit";
@@ -67,16 +67,7 @@ export class PlayerComponent implements OnInit {
 	}
 
 	pickCardFromStack(): void {
-		const count =
-			this.player.state === State.CARD_PICKING
-				? this.gameService.cardsToPick
-				: 1;
-		for (let i = 0; i < count; i++) this.player.drawCard();
-		this.gameService.afterCardPlayed(null);
-	}
-
-	get state(): string {
-		return stateToString(this.player.state);
+		this.gameService.humanPicks();
 	}
 
 	missTurn(): void {
@@ -96,10 +87,6 @@ export class PlayerComponent implements OnInit {
 	turn$ = this.gameService.turn;
 
 	isPickCardDisabled(turn: Turn | null): boolean {
-		return (
-			this.doesMissTurn() ||
-			turn !== Turn.ME ||
-			this.gameService.winner() !== null
-		);
+		return turn === null || !this.gameService.canHumanPick();
 	}
 }

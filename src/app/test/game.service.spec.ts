@@ -1,4 +1,4 @@
-import { TestBed } from "@angular/core/testing";
+import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { Injectable } from "@angular/core";
 import { GameService } from "../service/game.service";
 import { CardService } from "../service/card.service";
@@ -11,6 +11,9 @@ import { Turn } from "../model/enum/Turn";
 import { PlayerComponent } from "../components/players/player/player.component";
 import { SuitCalledModalComponent } from "../components/suit-called-modal/suit-called-modal.component";
 import { GameOverComponent } from "../components/game-over/game-over.component";
+import { StatusComponent } from "../components/status/status.component";
+import { DrawPileComponent } from "../components/draw-pile/draw-pile.component";
+import { RulesModalComponent } from "../components/rules-modal/rules-modal.component";
 import { CardCalledModalComponent } from "../components/card-called-modal/card-called-modal.component";
 
 const card = (rank: number, suit: Suit): Card => ({
@@ -425,6 +428,98 @@ describe("Game logic", () => {
 		});
 	});
 
+	describe("stacked misses", () => {
+		beforeEach(() => {
+			cardService.setDiscardPile([card(4, Suit.HEARTS)]);
+		});
+
+		it("while missing a turn only a 4 is playable, and only on a 4", () => {
+			human.state = State.MISSING;
+			expect(gameService.isLegalMove(card(4, Suit.CLUBS))).toBeTrue();
+			expect(gameService.isLegalMove(card(9, Suit.HEARTS))).toBeFalse();
+			cardService.setDiscardPile([card(9, Suit.HEARTS)]);
+			expect(gameService.isLegalMove(card(4, Suit.HEARTS))).toBeFalse();
+		});
+
+		it("a 4 makes the opponent miss one turn", () => {
+			setHand(human, [card(4, Suit.CLUBS), card(5, Suit.DIAMS)]);
+			human.chosenMove = 0;
+			human.playCard();
+			expect(bot.state).toBe(State.MISSING);
+			expect(gameService.turnsToMiss).toBe(1);
+		});
+
+		it("the bot passes a 4 back, doubling the misses", () => {
+			gameService.turn.next(Turn.OPPONENT);
+			bot.state = State.MISSING;
+			gameService.turnsToMiss = 1;
+			setHand(bot, [card(9, Suit.SPADES), card(4, Suit.DIAMS)]);
+			bot.makeAction();
+			expect(cardService.discardPileTop).toEqual(card(4, Suit.DIAMS));
+			expect(human.state).toBe(State.MISSING);
+			expect(gameService.turnsToMiss).toBe(2);
+		});
+
+		it("the human passes a 4 back too", () => {
+			human.state = State.MISSING;
+			gameService.turnsToMiss = 2;
+			setHand(human, [card(4, Suit.CLUBS), card(5, Suit.DIAMS)]);
+			human.chosenMove = 0;
+			human.makeAction();
+			expect(bot.state).toBe(State.MISSING);
+			expect(gameService.turnsToMiss).toBe(3);
+		});
+
+		it("the bot misses its turn when it has no 4", () => {
+			gameService.turn.next(Turn.OPPONENT);
+			bot.state = State.MISSING;
+			gameService.turnsToMiss = 1;
+			setHand(bot, [card(9, Suit.HEARTS)]);
+			bot.makeAction();
+			expect(bot.cards.length).toBe(1);
+			expect(gameService.turn.value).toBe(Turn.ME);
+		});
+
+		it("two stacked misses make a player miss two turns in a row", () => {
+			human.state = State.MISSING;
+			gameService.turnsToMiss = 2;
+			setHand(human, [card(9, Suit.SPADES)]);
+			setHand(bot, [card(8, Suit.HEARTS), card(8, Suit.CLUBS)]);
+
+			human.makeAction(); // first miss
+			expect(gameService.turn.value).toBe(Turn.OPPONENT);
+			bot.makeAction();
+			expect(bot.cards.length).toBe(1);
+
+			// back to the human, who still has one turn to miss
+			expect(gameService.turn.value).toBe(Turn.ME);
+			expect(human.state).toBe(State.MISSING);
+			expect(gameService.turnsToMiss).toBe(1);
+
+			human.makeAction(); // second miss
+			bot.makeAction();
+			expect(bot.cards.length).toBe(0);
+		});
+
+		it("the missed turns end once they are served", () => {
+			human.state = State.MISSING;
+			gameService.turnsToMiss = 2;
+			setHand(human, [card(9, Suit.SPADES)]);
+			setHand(bot, [
+				card(8, Suit.HEARTS),
+				card(8, Suit.CLUBS),
+				card(2, Suit.CLUBS),
+			]);
+			human.makeAction();
+			bot.makeAction();
+			human.makeAction();
+			bot.makeAction();
+			expect(gameService.turn.value).toBe(Turn.ME);
+			expect(human.state as State).toBe(State.WAITING_FOR_CARD);
+			expect(gameService.turnsToMiss).toBe(0);
+		});
+	});
+
 	describe("game over", () => {
 		beforeEach(() => {
 			spyOn(bot, "makeAction");
@@ -506,6 +601,43 @@ describe("Game logic", () => {
 			gameService.restart();
 			jasmine.clock().tick(5000);
 			expect(bot.makeAction).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("human picking", () => {
+		beforeEach(() => {
+			setHand(human, [card(9, Suit.SPADES)]);
+		});
+
+		it("canHumanPick is true on the human's turn only", () => {
+			expect(gameService.canHumanPick()).toBeTrue();
+			gameService.turn.next(Turn.OPPONENT);
+			expect(gameService.canHumanPick()).toBeFalse();
+		});
+
+		it("canHumanPick is false while missing a turn or after the game", () => {
+			human.state = State.MISSING;
+			expect(gameService.canHumanPick()).toBeFalse();
+			human.state = State.WAITING_FOR_CARD;
+			gameService.winner.set(Turn.OPPONENT);
+			expect(gameService.canHumanPick()).toBeFalse();
+		});
+
+		it("humanPicks draws one card, or the whole penalty", () => {
+			gameService.humanPicks();
+			expect(human.cards.length).toBe(2);
+
+			gameService.turn.next(Turn.ME);
+			human.state = State.CARD_PICKING;
+			gameService.cardsToPick = 4;
+			gameService.humanPicks();
+			expect(human.cards.length).toBe(6);
+		});
+
+		it("deckSize follows the deck", () => {
+			expect(cardService.deckSize).toBe(41);
+			gameService.humanPicks();
+			expect(cardService.deckSize).toBe(40);
 		});
 	});
 
@@ -617,5 +749,141 @@ describe("GameOverComponent", () => {
 		fixture.detectChanges();
 		expect(gameService.winner()).toBeNull();
 		expect(fixture.nativeElement.querySelector(".game-over")).toBeNull();
+	});
+});
+
+describe("StatusComponent", () => {
+	let gameService: GameService;
+	let fixture: ComponentFixture<StatusComponent>;
+
+	const message = () => fixture.componentInstance.message;
+
+	beforeEach(() => {
+		TestBed.configureTestingModule({
+			providers: [{ provide: CardService, useClass: MockCardService }],
+		});
+		gameService = TestBed.inject(GameService);
+		fixture = TestBed.createComponent(StatusComponent);
+		const me = gameService.players[Turn.ME];
+		me.cards.length = 0;
+		me.cards.push(card(9, Suit.SPADES));
+		(gameService.cardService as MockCardService).setDiscardPile([
+			card(5, Suit.HEARTS),
+		]);
+	});
+
+	it("invites the human to play", () => {
+		expect(message()).toBe("Your turn – play a card or pick one");
+	});
+
+	it("says when it is the opponent's turn or the game is over", () => {
+		gameService.turn.next(Turn.OPPONENT);
+		expect(message()).toBe("Opponent's turn…");
+		gameService.winner.set(Turn.OPPONENT);
+		expect(message()).toBe("Game over");
+	});
+
+	it("explains a penalty, and mentions passing it on only when possible", () => {
+		const me = gameService.players[Turn.ME];
+		const pile = gameService.cardService as MockCardService;
+		pile.setDiscardPile([card(2, Suit.HEARTS)]);
+		me.state = State.CARD_PICKING;
+		gameService.cardsToPick = 2;
+		expect(message()).toBe("You must pick 2 cards");
+
+		me.cards.push(card(2, Suit.CLUBS));
+		expect(message()).toBe(
+			"Pick 2 cards – or pass the penalty on with another 2",
+		);
+	});
+
+	it("explains a missed turn, and passing it on with a 4", () => {
+		const me = gameService.players[Turn.ME];
+		const pile = gameService.cardService as MockCardService;
+		pile.setDiscardPile([card(4, Suit.HEARTS)]);
+		me.state = State.MISSING;
+		expect(message()).toBe("You miss a turn");
+
+		me.cards.push(card(4, Suit.CLUBS));
+		expect(message()).toBe("You miss a turn – or pass it on with a 4");
+	});
+
+	it("explains the opponent's rank and suit calls", () => {
+		const me = gameService.players[Turn.ME];
+		me.state = State.CARD_CALLED;
+		gameService.cardCalled = 7;
+		expect(message()).toBe("Opponent called 7 – play it or pick a card");
+
+		me.state = State.SUIT_CALLED;
+		gameService.suitCalled = Suit.HEARTS;
+		expect(message()).toBe(
+			"Opponent called ♥ – play that suit or pick a card",
+		);
+	});
+
+	it("renders the message", () => {
+		fixture.detectChanges();
+		expect(fixture.nativeElement.textContent).toContain("Your turn");
+	});
+});
+
+describe("DrawPileComponent", () => {
+	let gameService: GameService;
+	let fixture: ComponentFixture<DrawPileComponent>;
+
+	beforeEach(() => {
+		TestBed.configureTestingModule({
+			providers: [{ provide: CardService, useClass: MockCardService }],
+		});
+		gameService = TestBed.inject(GameService);
+		fixture = TestBed.createComponent(DrawPileComponent);
+		fixture.detectChanges();
+	});
+
+	const button = (): HTMLButtonElement =>
+		fixture.nativeElement.querySelector("button");
+
+	it("shows the deck size", () => {
+		expect(button().textContent).toContain("Deck: 41");
+	});
+
+	it("draws a card for the human when clicked", () => {
+		spyOn(gameService.players[Turn.OPPONENT], "makeAction");
+		button().click();
+		expect(gameService.players[Turn.ME].cards.length).toBe(6);
+	});
+
+	it("is disabled on the bot's turn", () => {
+		gameService.turn.next(Turn.OPPONENT);
+		fixture.detectChanges();
+		expect(button().disabled).toBeTrue();
+	});
+});
+
+describe("RulesModalComponent", () => {
+	it("is empty when hidden and lists the rules when visible", () => {
+		const fixture = TestBed.createComponent(RulesModalComponent);
+		fixture.detectChanges();
+		expect(fixture.nativeElement.querySelector(".rules")).toBeNull();
+
+		fixture.componentInstance.visible = true;
+		fixture.changeDetectorRef.detectChanges();
+		expect(fixture.nativeElement.textContent).toContain(
+			"Next player picks 2 cards",
+		);
+	});
+
+	it("emits closed from the button and the backdrop", () => {
+		const fixture = TestBed.createComponent(RulesModalComponent);
+		fixture.componentInstance.visible = true;
+		fixture.changeDetectorRef.detectChanges();
+		let closed = 0;
+		fixture.componentInstance.closed.subscribe(() => closed++);
+
+		fixture.nativeElement.querySelector("button").click();
+		fixture.nativeElement.querySelector(".rules").click();
+		fixture.nativeElement.querySelector(".rules__content").click(); // clicks inside the dialog don't close it
+
+		expect(closed).toBe(2);
 	});
 });

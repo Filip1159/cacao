@@ -1,0 +1,8 @@
+<div
+	class="status"
+	[class.status--mine]="isMyTurn"
+	[attr.data-turn]="turn$ | async"
+	role="status"
+>
+	{{ message }}
+</div>

@@ -64,7 +64,7 @@ A card is playable if it matches the rank or suit of the top of the discard pile
 - [x] **Win/lose condition**: game ends when a player's hand is empty (`GameService.winner` signal, checked after every play)
 - [x] **Ace**: playing an Ace lets the player call a suit; next player must follow that suit (`SUIT_CALLED` state, `suitCalled` in `GameService`, suit-picker modal, called rank/suit shown under the discard pile)
 - [x] **Counter-playing penalty cards**: while in `CARD_PICKING` a penalty card of the same rank (2, 3, K♥/K♠) can be played to pass the stacked penalty on (`penaltyOf` in `Card.ts`; pending count shown under the discard pile)
-- [ ] **Counter a 4** with another 4 (stacking misses) – decide if included
+- [x] **Counter a 4** with another 4: a player who has to miss a turn can play a 4 on the 4 to pass the miss on; misses stack and are served in a row (`turnsToMiss` in `GameService`, shown under the discard pile)
 - [x] **Reshuffle**: when the draw deck is empty, shuffle the discard pile (except top card) back into the deck
 - [x] Prevent drawing more than the cards available (edge case when both deck and discard are exhausted)
 - [x] Starting card handling: ensure starting card is never 2/3/4/J/Q/A/K♥/K♠ (currently excludes ≥ J, which matches)
@@ -77,14 +77,15 @@ A card is playable if it matches the rank or suit of the top of the discard pile
 
 ### UI / UX
 - [x] Game-over screen (win/lose message) and **New game** button (`GameService.restart()`, button in the header and in the game-over dialog)
-- [ ] Visible draw pile (face-down stack with remaining count) – clicking it picks a card
-- [ ] Show active effect on the table: called rank, called suit and pending cards to pick are shown; "you miss a turn" still missing
-- [ ] Clear indication of whose turn it is (and disable all controls during the bot's turn)
-- [ ] Replace debug text (`WAITING_FOR_CARD` etc.) with friendly messages / remove it
-- [ ] Remove placeholder content: header "Macau game server", 5× "Lorem ipsum" nav items
-- [ ] Show opponent's card count; basic animation for card play/draw (optional)
-- [ ] Responsive layout / mobile check
-- [ ] Rules/help dialog summarising card effects
+- [x] Visible draw pile (face-down card with remaining count) – clicking it picks a card (`app-draw-pile`)
+- [x] Show active effect on the table: called rank/suit, cards to pick and turns to miss under the discard pile, plus a status line ("You miss a turn", "Opponent called ♥ …")
+- [x] Clear indication of whose turn it is: status line and highlighted hand label; controls are disabled on the bot's turn
+- [x] Replace debug text (`WAITING_FOR_CARD` etc.) with friendly messages (`app-status`)
+- [x] Remove placeholder content: header is now "Macau" with Rules / New game buttons, the "Lorem ipsum" nav is gone
+- [x] Show opponent's card count ("Opponent · 5 cards")
+- [ ] Basic animation for card play/draw (optional)
+- [x] Responsive layout: hands wrap, cards shrink under 600 px; e2e check at 375 px
+- [x] Rules/help dialog summarising card effects (`app-rules-modal`)
 
 ### Quality
 - [ ] Remove `console.log` debugging from services and components

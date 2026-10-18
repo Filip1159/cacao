@@ -25,8 +25,9 @@ export class Game {
 	readonly discardTop: Locator;
 	readonly pickCardButton: Locator;
 	readonly missTurnButton: Locator;
-	readonly playerState: Locator;
-	readonly opponentState: Locator;
+	readonly status: Locator;
+	readonly deckButton: Locator;
+	readonly rulesButton: Locator;
 	readonly rankModal: Locator;
 	readonly suitModal: Locator;
 	readonly discardPile: Locator;
@@ -39,8 +40,9 @@ export class Game {
 		this.discardTop = page.locator("app-discard-pile app-card");
 		this.pickCardButton = page.getByRole("button", { name: "Pick card" });
 		this.missTurnButton = page.getByRole("button", { name: "Miss turn" });
-		this.playerState = page.locator("#player_cards > span");
-		this.opponentState = page.locator("#opponent_cards > span");
+		this.status = page.locator(".status");
+		this.deckButton = page.getByRole("button", { name: "Draw pile" });
+		this.rulesButton = page.getByRole("button", { name: "Rules" });
 		this.rankModal = page.locator(".card-called-modal");
 		this.suitModal = page.locator(".suit-called-modal");
 		this.discardPile = page.locator("app-discard-pile");

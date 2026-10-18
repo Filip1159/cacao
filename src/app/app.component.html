@@ -1,19 +1,22 @@
-<h1 class="header">
-	Macau game server
-	<button class="header__restart" (click)="restart()">New game</button>
-</h1>
+<header class="header">
+	<h1 class="header__title">Macau</h1>
+	<div class="header__buttons">
+		<button class="header__rules" (click)="showRules.set(true)">
+			Rules
+		</button>
+		<button class="header__restart" (click)="restart()">New game</button>
+	</div>
+</header>
 <app-game-over></app-game-over>
-<div class="container">
-	<div class="container__nav">
-		<div class="container__nav__nav-item">Lorem ipsum</div>
-		<div class="container__nav__nav-item">Lorem ipsum</div>
-		<div class="container__nav__nav-item">Lorem ipsum</div>
-		<div class="container__nav__nav-item">Lorem ipsum</div>
-		<div class="container__nav__nav-item">Lorem ipsum</div>
-	</div>
-	<div class="container__game">
-		<app-opponent></app-opponent>
+<app-rules-modal
+	[visible]="showRules()"
+	(closed)="showRules.set(false)"
+></app-rules-modal>
+<main class="game">
+	<app-opponent></app-opponent>
+	<div class="game__middle">
 		<app-discard-pile></app-discard-pile>
-		<app-player></app-player>
+		<app-status></app-status>
 	</div>
-</div>
+	<app-player></app-player>
+</main>

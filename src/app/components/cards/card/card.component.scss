@@ -80,3 +80,9 @@
 		transform: rotate(180deg);
 	}
 }
+
+@media (max-width: 600px) {
+	.card {
+		zoom: 0.6;
+	}
+}

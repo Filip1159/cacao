@@ -1,0 +1,27 @@
+.rules {
+	position: fixed;
+	z-index: 3;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	overflow-y: auto;
+	background-color: rgba(0, 0, 0, 0.6);
+
+	&__content {
+		box-sizing: border-box;
+		background-color: #f0f0f0;
+		margin: 40px auto;
+		padding: 20px;
+		width: min(560px, calc(100% - 32px));
+		font-family: "Segoe UI", sans-serif;
+
+		h2 {
+			margin-top: 0;
+		}
+
+		ul {
+			padding-left: 20px;
+		}
+	}
+}

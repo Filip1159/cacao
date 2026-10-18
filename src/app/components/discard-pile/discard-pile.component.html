@@ -1,10 +1,30 @@
-<app-card [card]="this.gameService.cardService.discardPileTop"></app-card>
-@if (gameService.cardsToPick > 0) {
-	<span class="call">Cards to pick: {{ gameService.cardsToPick }}</span>
-}
-@if (gameService.cardCalled !== null) {
-	<span class="call">Called rank: {{ gameService.cardCalled }}</span>
-}
-@if (gameService.suitCalled !== null) {
-	<span class="call">Called suit: {{ gameService.suitCalled }}</span>
-}
+<div class="table">
+	<app-draw-pile></app-draw-pile>
+	<div class="discard">
+		<app-card
+			[card]="this.gameService.cardService.discardPileTop"
+		></app-card>
+		<div class="effects">
+			@if (gameService.cardsToPick > 0) {
+				<span class="call"
+					>Cards to pick: {{ gameService.cardsToPick }}</span
+				>
+			}
+			@if (gameService.turnsToMiss > 0) {
+				<span class="call"
+					>Turns to miss: {{ gameService.turnsToMiss }}</span
+				>
+			}
+			@if (gameService.cardCalled !== null) {
+				<span class="call"
+					>Called rank: {{ gameService.cardCalled }}</span
+				>
+			}
+			@if (gameService.suitCalled !== null) {
+				<span class="call"
+					>Called suit: {{ gameService.suitCalled }}</span
+				>
+			}
+		</div>
+	</div>
+</div>

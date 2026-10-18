@@ -1,0 +1,29 @@
+@if (visible) {
+	<div class="rules" (click)="closed.emit()">
+		<div
+			class="rules__content"
+			role="dialog"
+			aria-label="Rules"
+			(click)="$event.stopPropagation()"
+		>
+			<h2>Rules</h2>
+			<p>
+				Get rid of all your cards. Play a card that matches the rank or
+				the suit of the top card of the discard pile, or pick a card
+				from the deck.
+			</p>
+			<ul>
+				@for (rule of rules; track rule.card) {
+					<li>
+						<strong>{{ rule.card }}</strong> – {{ rule.effect }}
+					</li>
+				}
+			</ul>
+			<p>
+				A 2, 3 or penalty King can be passed back with a card of the
+				same rank, and a 4 with another 4; penalties then add up.
+			</p>
+			<button (click)="closed.emit()">Close</button>
+		</div>
+	</div>
+}

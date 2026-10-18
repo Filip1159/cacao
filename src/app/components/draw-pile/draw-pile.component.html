@@ -1,0 +1,13 @@
+<button
+	class="draw-pile"
+	[attr.aria-label]="
+		'Draw pile, ' + gameService.cardService.deckSize + ' cards'
+	"
+	[disabled]="!canPick(turn$ | async)"
+	(click)="gameService.humanPicks()"
+>
+	<app-card-face-down></app-card-face-down>
+	<span class="draw-pile__count"
+		>Deck: {{ gameService.cardService.deckSize }}</span
+	>
+</button>

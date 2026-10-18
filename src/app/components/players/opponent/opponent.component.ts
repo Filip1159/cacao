@@ -1,7 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { Card } from "../../../model/Card";
 import { GameService } from "../../../service/game.service";
-import { stateToString } from "../../../model/enum/State";
+import { Turn } from "../../../model/enum/Turn";
 import { Player } from "../../../service/player/Player";
 import { CardFaceDownComponent } from "../../cards/card-face-down/card-face-down.component";
 
@@ -23,7 +23,7 @@ export class OpponentComponent implements OnInit {
 
 	ngOnInit(): void {}
 
-	get state(): string {
-		return stateToString(this.player.state);
+	get isActive(): boolean {
+		return this.gameService.turn.value === Turn.OPPONENT;
 	}
 }
