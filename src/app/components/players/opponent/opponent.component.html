@@ -1,4 +1,6 @@
 <div id="opponent_cards">
-	<app-card-face-down *ngFor="let card of cards" [card]="card"></app-card-face-down>
-	<span>{{state}}</span>
+	@for (c of cards; track c) {
+		<app-card-face-down [card]="c"></app-card-face-down>
+	}
+	<span>{{ state }}</span>
 </div>

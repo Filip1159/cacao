@@ -1,4 +1,7 @@
-<div class="card-called-modal" [ngClass]="{'card-called-modal--visible': visible}">
+<div
+	class="card-called-modal"
+	[class]="{ 'card-called-modal--visible': visible }"
+>
 	<div class="card-called-modal__content">
 		<span>Select rank you want to call:</span>
 		<select (change)="onRankSelected($event)">

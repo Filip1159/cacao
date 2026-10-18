@@ -1,27 +1,26 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {Card} from "../../../model/Card";
-import {Suit} from "../../../model/Suit";
+import { Component, Input, OnInit } from "@angular/core";
+import { Card } from "../../../model/Card";
+import { Suit } from "../../../model/Suit";
 
 @Component({
-	selector: 'app-card',
-	templateUrl: './card.component.html',
-	styleUrls: ['./card.component.scss']
+	selector: "app-card",
+	templateUrl: "./card.component.html",
+	styleUrls: ["./card.component.scss"],
+	standalone: true,
 })
 export class CardComponent implements OnInit {
-	@Input() card!: Card
-	@Input() disabled!: boolean
+	@Input() card!: Card;
+	@Input() disabled!: boolean;
 
-	constructor() {
-	}
+	constructor() {}
 
-	ngOnInit(): void {
-	}
+	ngOnInit(): void {}
 
 	get isRed(): boolean {
-		return this.card.suit === Suit.DIAMS || this.card.suit === Suit.HEARTS
+		return this.card.suit === Suit.DIAMS || this.card.suit === Suit.HEARTS;
 	}
 
 	get isBlack(): boolean {
-		return !this.isRed
+		return !this.isRed;
 	}
 }

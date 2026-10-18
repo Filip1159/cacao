@@ -1,5 +1,8 @@
 export enum RankCharacter {
-	Jack = 11, Queen, King, Ace
+	Jack = 11,
+	Queen,
+	King,
+	Ace,
 }
 
 export class Rank {
@@ -8,28 +11,27 @@ export class Rank {
 	constructor(value: number) {
 		if (value < 2 || value > 14) throw new Error(`Illegal value: ${value}`);
 		if (value <= 10) this.value = value;
-		else this.value = value as RankCharacter
+		else this.value = value as RankCharacter;
 	}
 
 	static getAllRanks(): Rank[] {
-		const ranks = []
-		for (let i = 2; i <= 14; i++)
-			ranks.push(new Rank(i))
+		const ranks = [];
+		for (let i = 2; i <= 14; i++) ranks.push(new Rank(i));
 		return ranks;
 	}
 
 	toString(): string {
 		switch (this.value) {
 			case RankCharacter.Jack:
-				return "J"
+				return "J";
 			case RankCharacter.Queen:
-				return "Q"
+				return "Q";
 			case RankCharacter.King:
-				return "K"
+				return "K";
 			case RankCharacter.Ace:
-				return "A"
+				return "A";
 			default:
-				return this.value.toString()
+				return this.value.toString();
 		}
 	}
 }

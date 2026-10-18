@@ -1,3 +1,4 @@
 export enum Turn {
-  MY, OPPONENT
+	ME,
+	OPPONENT,
 }

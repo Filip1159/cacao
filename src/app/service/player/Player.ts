@@ -1,50 +1,60 @@
-import {Card} from "../../model/Card";
-import {State} from "../../model/enum/State";
-import {GameService} from "../game.service";
-import {CardService} from "../card.service";
+import { Card } from "../../model/Card";
+import { State } from "../../model/enum/State";
+import { GameService } from "../game.service";
+import { CardService } from "../card.service";
+import { Turn } from "../../model/enum/Turn";
 
 export abstract class Player {
-	cards: Card[]
-	state: State
-	chosenMove: number
-	chosenRank?: number
+	cards: Card[];
+	state: State;
+	chosenMove: number;
+	chosenRank?: number;
 
-	protected constructor(protected gameService: GameService, protected cardService: CardService) {
-		this.cards = []
-		this.state = State.WAITING_FOR_CARD
-		this.chosenMove = -1
+	protected constructor(
+		protected gameService: GameService,
+		protected cardService: CardService,
+	) {
+		this.cards = [];
+		this.state = State.WAITING_FOR_CARD;
+		this.chosenMove = -1;
 	}
 
 	addCard(card: Card): void {
-		this.cards.push(card)
+		this.cards.push(card);
 	}
 
 	removeCard(cardIndex: number): Card {
-		return this.cards.splice(cardIndex, 1)[0]
+		return this.cards.splice(cardIndex, 1)[0];
 	}
 
 	makeAction() {
+		console.log(`[${Turn[this.gameService.turn.value]}] makeAction`);
 		if (this.state === State.WAITING_FOR_CARD) {
-			this.playCard()
+			this.playCard();
 		} else if (this.state === State.MISSING) {
-			this.gameService.afterCardPlayed(null)
+			this.gameService.afterCardPlayed(null);
 		} else if (this.state === State.CARD_PICKING) {
 			for (let i = 0; i < this.gameService.cardsToPick; i++)
-				this.addCard(this.cardService.pickCardFromTop())
-			this.gameService.cardsToPick = 0
-			this.gameService.afterCardPlayed(null)
+				this.addCard(this.cardService.pickCardFromTop());
+			this.gameService.cardsToPick = 0;
+			this.gameService.afterCardPlayed(null);
 		} else if (this.state === State.CARD_CALLED) {
-			const calledCardIndex = this.cards.map(card => card.rank.value).indexOf(this.gameService.cardCalled!)
+			const calledCardIndex = this.cards
+				.map((card) => card.rank.value)
+				.indexOf(this.gameService.cardCalled!);
 			if (calledCardIndex !== -1) {
-				const playedCard = this.removeCard(this.chosenMove)
-				this.gameService.afterCardPlayed(playedCard)
+				const playedCard = this.removeCard(this.chosenMove);
+				this.gameService.afterCardPlayed(playedCard);
 			} else {
-				this.addCard(this.cardService.pickCardFromTop())
-				this.gameService.afterCardPlayed(null)
+				this.addCard(this.cardService.pickCardFromTop());
+				this.gameService.afterCardPlayed(null);
 			}
 		}
+		console.log(
+			`[${Turn[this.gameService.turn.value]}] are my cards disabled? ${this.gameService.players[0].state === State.MISSING} || ${this.gameService.turn.value !== Turn.ME}`,
+		);
+		console.log(`[${Turn[this.gameService.turn.value]}] after makeAction`);
 	}
 
-	abstract playCard(cardIndex?: number): void
+	abstract playCard(cardIndex?: number): void;
 }
-
