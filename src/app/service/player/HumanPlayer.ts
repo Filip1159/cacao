@@ -9,23 +9,18 @@ export class HumanPlayer extends Player {
 	}
 
 	override playCard(): void {
-		if (this.chosenMove !== -1) {
-			const playedCard = this.removeCard(this.chosenMove);
-			this.chosenMove = -1;
-			let cardCalled;
-			let suitCalled;
-			if (playedCard.rank.value === RankCharacter.Jack)
-				cardCalled = this.chosenRank;
-			if (playedCard.rank.value === RankCharacter.Ace)
-				suitCalled = this.chosenSuit;
-			this.gameService.afterCardPlayed(
-				playedCard,
-				cardCalled,
-				suitCalled,
-			);
-		} else {
-			this.drawCard();
-			this.gameService.afterCardPlayed(null);
+		if (this.chosenMove === -1) {
+			this.gameService.pickCards(this);
+			return;
 		}
+		const index = this.chosenMove;
+		this.chosenMove = -1;
+		const rank = this.cards[index].rank.value;
+		this.gameService.stageCard(
+			this,
+			index,
+			rank === RankCharacter.Jack ? this.chosenRank : undefined,
+			rank === RankCharacter.Ace ? this.chosenSuit : undefined,
+		);
 	}
 }

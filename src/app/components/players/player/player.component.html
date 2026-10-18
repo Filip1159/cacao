@@ -1,5 +1,7 @@
 <div id="player_cards" class="hand" [class.hand--active]="isMyTurn()">
-	<div class="hand__label">You · {{ cards.length }} cards</div>
+	<div class="hand__label">
+		You · {{ cards.length }} {{ cards.length === 1 ? "card" : "cards" }}
+	</div>
 	<div class="hand__cards">
 		@for (c of cards; track c) {
 			<app-card
@@ -17,8 +19,14 @@
 		>
 			Pick card
 		</button>
-		<button (click)="missTurn()" [disabled]="!doesMissTurn()">
+		<button (click)="missTurn()" [disabled]="!canMissTurn()">
 			Miss turn
+		</button>
+		@if (isChaining()) {
+			<button (click)="endTurn()">End turn</button>
+		}
+		<button (click)="callMacau()" [disabled]="!isMacauPending()">
+			Macau!
 		</button>
 	</div>
 	<app-suit-called-modal

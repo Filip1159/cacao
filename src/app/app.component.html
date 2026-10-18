@@ -1,6 +1,19 @@
 <header class="header">
 	<h1 class="header__title">Macau</h1>
 	<div class="header__buttons">
+		<label class="header__difficulty">
+			Bot
+			<select
+				aria-label="Bot difficulty"
+				(change)="setDifficulty($event)"
+			>
+				@for (level of difficulties; track level) {
+					<option [value]="level" [selected]="level === difficulty()">
+						{{ level }}
+					</option>
+				}
+			</select>
+		</label>
 		<button class="header__rules" (click)="showRules.set(true)">
 			Rules
 		</button>

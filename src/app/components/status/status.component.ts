@@ -18,10 +18,18 @@ export class StatusComponent {
 	constructor(public gameService: GameService) {}
 
 	get message(): string {
+		const notice = this.gameService.notice();
+		return notice ? `${notice} ${this.baseMessage}` : this.baseMessage;
+	}
+
+	private get baseMessage(): string {
 		const game = this.gameService;
 		if (game.winner() !== null) return "Game over";
+		if (game.macauPending()) return "You have one card left – press Macau!";
 		if (game.turn.value === Turn.OPPONENT) return "Opponent's turn…";
 		const me = game.players[Turn.ME];
+		if (game.chain.length > 0)
+			return `Play another ${game.chain[0].rank} – or end your turn`;
 		const canCounter = me.hasCounter();
 		switch (me.state) {
 			case State.CARD_PICKING: {

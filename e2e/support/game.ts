@@ -4,7 +4,11 @@ import { Locator, Page } from "@playwright/test";
  * Replaces Math.random with a seeded generator (mulberry32) so that the
  * shuffled deck - and therefore the whole game - is reproducible.
  */
-export async function startGame(page: Page, seed: number): Promise<Game> {
+export async function startGame(
+	page: Page,
+	seed: number,
+	difficulty: "easy" | "normal" | "hard" = "easy",
+): Promise<Game> {
 	await page.addInitScript((initialSeed) => {
 		let a = initialSeed;
 		Math.random = () => {
@@ -16,6 +20,9 @@ export async function startGame(page: Page, seed: number): Promise<Game> {
 		};
 	}, seed);
 	await page.goto("/");
+	// the easy bot plays the first legal card and never chains cards, which
+	// keeps the scenarios below predictable
+	await page.getByLabel("Bot difficulty").selectOption(difficulty);
 	return new Game(page);
 }
 
@@ -28,6 +35,8 @@ export class Game {
 	readonly status: Locator;
 	readonly deckButton: Locator;
 	readonly rulesButton: Locator;
+	readonly endTurnButton: Locator;
+	readonly macauButton: Locator;
 	readonly rankModal: Locator;
 	readonly suitModal: Locator;
 	readonly discardPile: Locator;
@@ -43,6 +52,8 @@ export class Game {
 		this.status = page.locator(".status");
 		this.deckButton = page.getByRole("button", { name: "Draw pile" });
 		this.rulesButton = page.getByRole("button", { name: "Rules" });
+		this.endTurnButton = page.getByRole("button", { name: "End turn" });
+		this.macauButton = page.getByRole("button", { name: "Macau!" });
 		this.rankModal = page.locator(".card-called-modal");
 		this.suitModal = page.locator(".suit-called-modal");
 		this.discardPile = page.locator("app-discard-pile");
@@ -103,6 +114,20 @@ export class Game {
 		}, index);
 	}
 
+	/** Keeps only the human's cards at the given positions (dev-mode debug API). */
+	async keepCards(indexes: number[]): Promise<void> {
+		await this.page.evaluate((keep) => {
+			const ng = (window as any).ng;
+			const cards = ng.getComponent(
+				document.querySelector("app-player"),
+			).cards;
+			const kept = keep.map((i) => cards[i]);
+			cards.length = 0;
+			cards.push(...kept);
+			ng.applyChanges(document.querySelector("app-player"));
+		}, indexes);
+	}
+
 	/** Replaces the bot's hand with the given cards. */
 	async setOpponentHand(
 		cards: { rank: number; suit: string }[],
@@ -121,6 +146,24 @@ export class Game {
 			);
 			ng.applyChanges(document.querySelector("app-opponent"));
 		}, cards);
+	}
+
+	/** Adds a card to the human's hand (dev-mode debug API). */
+	async giveCard(rank: number, suit: string): Promise<void> {
+		await this.page.evaluate(
+			({ rank, suit }) => {
+				const ng = (window as any).ng;
+				const cards = ng.getComponent(
+					document.querySelector("app-player"),
+				).cards;
+				cards.push({
+					rank: { value: rank, toString: () => String(rank) },
+					suit,
+				});
+				ng.applyChanges(document.querySelector("app-player"));
+			},
+			{ rank, suit },
+		);
 	}
 
 	async play(index: number): Promise<void> {

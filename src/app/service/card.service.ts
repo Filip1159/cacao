@@ -93,10 +93,4 @@ export class CardService {
 			this.deck[j] = temp;
 		}
 	}
-
-	printDeck(): void {
-		for (let card of this.deck) {
-			console.log(card.toString());
-		}
-	}
 }

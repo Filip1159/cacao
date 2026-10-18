@@ -1,9 +1,7 @@
 <div class="table">
 	<app-draw-pile></app-draw-pile>
 	<div class="discard">
-		<app-card
-			[card]="this.gameService.cardService.discardPileTop"
-		></app-card>
+		<app-card [card]="gameService.cardService.discardPileTop"></app-card>
 		<div class="effects">
 			@if (gameService.cardsToPick > 0) {
 				<span class="call"

@@ -1,4 +1,5 @@
 .card--face_down {
+	animation: card-in 0.25s ease-out;
 	background-image:
 		repeating-linear-gradient(
 			45deg,
@@ -49,5 +50,18 @@
 @media (max-width: 600px) {
 	.card--face_down {
 		zoom: 0.6;
+	}
+}
+
+@keyframes card-in {
+	from {
+		opacity: 0;
+		transform: translateY(-16px) scale(0.92);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.card--face_down {
+		animation: none;
 	}
 }

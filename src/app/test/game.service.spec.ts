@@ -1,12 +1,13 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { Injectable } from "@angular/core";
 import { GameService } from "../service/game.service";
 import { CardService } from "../service/card.service";
 import { BotPlayer } from "../service/player/BotPlayer";
 import { Card } from "../model/Card";
+import { MockCardService, card } from "./support";
 import { Suit } from "../model/Suit";
-import { Rank, RankCharacter } from "../model/Rank";
+import { RankCharacter } from "../model/Rank";
 import { State } from "../model/enum/State";
+import { Difficulty } from "../model/enum/Difficulty";
 import { Turn } from "../model/enum/Turn";
 import { PlayerComponent } from "../components/players/player/player.component";
 import { SuitCalledModalComponent } from "../components/suit-called-modal/suit-called-modal.component";
@@ -15,36 +16,6 @@ import { StatusComponent } from "../components/status/status.component";
 import { DrawPileComponent } from "../components/draw-pile/draw-pile.component";
 import { RulesModalComponent } from "../components/rules-modal/rules-modal.component";
 import { CardCalledModalComponent } from "../components/card-called-modal/card-called-modal.component";
-
-const card = (rank: number, suit: Suit): Card => ({
-	rank: new Rank(rank),
-	suit,
-});
-
-@Injectable()
-class MockCardService extends CardService {
-	// deterministic (unshuffled) deck
-	protected override init(): void {
-		this.deck = CardService.createFullDeck();
-		this.discardPile = [this.pickBasicCardFromTop()];
-	}
-
-	getDeck(): Card[] {
-		return this.deck;
-	}
-
-	setDeck(cards: Card[]): void {
-		this.deck = cards;
-	}
-
-	getDiscardPile(): Card[] {
-		return this.discardPile;
-	}
-
-	setDiscardPile(cards: Card[]): void {
-		this.discardPile = cards;
-	}
-}
 
 describe("Game logic", () => {
 	let gameService: GameService;
@@ -396,6 +367,65 @@ describe("Game logic", () => {
 			expect(gameService.cardsToPick).toBe(6);
 		});
 
+		describe("strategy", () => {
+			const humanWithCards = (n: number) =>
+				setHand(
+					human,
+					Array.from({ length: n }, () => card(9, Suit.HEARTS)),
+				);
+			const bestMove = () => (bot as BotPlayer).getBestMove();
+
+			beforeEach(() => {
+				cardService.setDiscardPile([card(5, Suit.CLUBS)]);
+				humanWithCards(5);
+			});
+
+			it("plays plain cards before Jacks, Aces and attack cards", () => {
+				setHand(bot, [
+					card(RankCharacter.Jack, Suit.CLUBS),
+					card(RankCharacter.Ace, Suit.CLUBS),
+					card(2, Suit.CLUBS),
+					card(4, Suit.CLUBS),
+					card(7, Suit.CLUBS),
+				]);
+				expect(bestMove()).toBe(4);
+			});
+
+			it("holds back attack cards while the human has many cards", () => {
+				setHand(bot, [card(2, Suit.CLUBS), card(7, Suit.CLUBS)]);
+				expect(bestMove()).toBe(1);
+			});
+
+			it("attacks once the human is close to winning", () => {
+				humanWithCards(3);
+				setHand(bot, [card(7, Suit.CLUBS), card(2, Suit.CLUBS)]);
+				expect(bestMove()).toBe(1);
+			});
+
+			it("saves Jacks and Aces for when nothing else is playable", () => {
+				setHand(bot, [
+					card(RankCharacter.Ace, Suit.CLUBS),
+					card(RankCharacter.Jack, Suit.CLUBS),
+					card(2, Suit.CLUBS),
+				]);
+				expect(bestMove()).toBe(2); // the 2, then the Jack, then the Ace
+				bot.removeCard(2);
+				expect(bestMove()).toBe(1);
+			});
+
+			it("takes the earliest card among equals", () => {
+				setHand(bot, [card(8, Suit.CLUBS), card(7, Suit.CLUBS)]);
+				expect(bestMove()).toBe(0);
+			});
+
+			it("ignores cards it cannot play", () => {
+				setHand(bot, [card(8, Suit.HEARTS), card(7, Suit.CLUBS)]);
+				expect(bestMove()).toBe(1);
+				setHand(bot, [card(8, Suit.HEARTS)]);
+				expect(bestMove()).toBe(-1);
+			});
+		});
+
 		it("draws the penalty cards", () => {
 			setHand(bot, [card(9, Suit.SPADES)]);
 			bot.state = State.CARD_PICKING;
@@ -484,7 +514,7 @@ describe("Game logic", () => {
 			human.state = State.MISSING;
 			gameService.turnsToMiss = 2;
 			setHand(human, [card(9, Suit.SPADES)]);
-			setHand(bot, [card(8, Suit.HEARTS), card(8, Suit.CLUBS)]);
+			setHand(bot, [card(8, Suit.HEARTS), card(9, Suit.HEARTS)]);
 
 			human.makeAction(); // first miss
 			expect(gameService.turn.value).toBe(Turn.OPPONENT);
@@ -507,7 +537,7 @@ describe("Game logic", () => {
 			setHand(human, [card(9, Suit.SPADES)]);
 			setHand(bot, [
 				card(8, Suit.HEARTS),
-				card(8, Suit.CLUBS),
+				card(9, Suit.HEARTS),
 				card(2, Suit.CLUBS),
 			]);
 			human.makeAction();
@@ -517,6 +547,249 @@ describe("Game logic", () => {
 			expect(gameService.turn.value).toBe(Turn.ME);
 			expect(human.state as State).toBe(State.WAITING_FOR_CARD);
 			expect(gameService.turnsToMiss).toBe(0);
+		});
+	});
+
+	describe("same-rank chains", () => {
+		beforeEach(() => {
+			cardService.setDiscardPile([card(9, Suit.CLUBS)]);
+		});
+
+		const playFirst = () => {
+			human.chosenMove = 0;
+			human.playCard();
+		};
+
+		it("keeps the turn while more cards of the rank can be added", () => {
+			setHand(human, [
+				card(7, Suit.CLUBS),
+				card(7, Suit.HEARTS),
+				card(9, Suit.CLUBS),
+			]);
+			playFirst();
+			expect(gameService.chain).toEqual([card(7, Suit.CLUBS)]);
+			expect(gameService.turn.value).toBe(Turn.ME);
+			expect(cardService.discardPileTop).toEqual(card(7, Suit.CLUBS));
+			expect(gameService.canHumanPick()).toBeFalse();
+		});
+
+		it("only allows cards of the same rank while chaining", () => {
+			setHand(human, [
+				card(7, Suit.CLUBS),
+				card(7, Suit.HEARTS),
+				card(9, Suit.CLUBS),
+			]);
+			playFirst();
+			expect(gameService.isLegalMove(card(7, Suit.HEARTS))).toBeTrue();
+			// matches the suit of the top card, but not the chain's rank
+			expect(gameService.isLegalMove(card(9, Suit.CLUBS))).toBeFalse();
+		});
+
+		it("ends the turn on request", () => {
+			setHand(human, [
+				card(7, Suit.CLUBS),
+				card(7, Suit.HEARTS),
+				card(9, Suit.CLUBS),
+			]);
+			playFirst();
+			gameService.endChain();
+			expect(gameService.chain).toEqual([]);
+			expect(gameService.turn.value).toBe(Turn.OPPONENT);
+			expect(human.cards.length).toBe(2);
+		});
+
+		it("ends the turn by itself after the last card of the rank", () => {
+			setHand(human, [
+				card(7, Suit.CLUBS),
+				card(7, Suit.HEARTS),
+				card(9, Suit.CLUBS),
+			]);
+			playFirst();
+			human.chosenMove = 0; // 7♥
+			human.playCard();
+			expect(gameService.chain).toEqual([]);
+			expect(gameService.turn.value).toBe(Turn.OPPONENT);
+			expect(cardService.discardPileTop).toEqual(card(7, Suit.HEARTS));
+		});
+
+		it("adds up penalties: two 2s make 4 cards", () => {
+			setHand(human, [
+				card(2, Suit.CLUBS),
+				card(2, Suit.HEARTS),
+				card(5, Suit.DIAMS),
+			]);
+			playFirst();
+			human.chosenMove = 0;
+			human.playCard();
+			expect(bot.state).toBe(State.CARD_PICKING);
+			expect(gameService.cardsToPick).toBe(4);
+		});
+
+		it("adds up misses: two 4s make 2 turns", () => {
+			setHand(human, [
+				card(4, Suit.CLUBS),
+				card(4, Suit.HEARTS),
+				card(5, Suit.DIAMS),
+			]);
+			playFirst();
+			human.chosenMove = 0;
+			human.playCard();
+			expect(bot.state).toBe(State.MISSING);
+			expect(gameService.turnsToMiss).toBe(2);
+		});
+
+		it("playing every card of a chain wins", () => {
+			setHand(human, [card(7, Suit.CLUBS), card(7, Suit.HEARTS)]);
+			playFirst();
+			human.chosenMove = 0;
+			human.playCard();
+			expect(gameService.winner()).toBe(Turn.ME);
+		});
+
+		it("never chains Jacks or Aces, they need a call", () => {
+			setHand(human, [
+				card(RankCharacter.Jack, Suit.CLUBS),
+				card(RankCharacter.Jack, Suit.HEARTS),
+				card(5, Suit.DIAMS),
+			]);
+			human.chosenRank = 7;
+			playFirst();
+			expect(gameService.chain).toEqual([]);
+			expect(gameService.turn.value).toBe(Turn.OPPONENT);
+			expect(gameService.cardCalled).toBe(7);
+		});
+
+		it("the bot plays all its cards of a rank", () => {
+			gameService.turn.next(Turn.OPPONENT);
+			cardService.setDiscardPile([card(5, Suit.CLUBS)]);
+			setHand(bot, [
+				card(7, Suit.CLUBS),
+				card(9, Suit.DIAMS),
+				card(7, Suit.HEARTS),
+			]);
+			bot.makeAction();
+			expect(bot.cards).toEqual([card(9, Suit.DIAMS)]);
+			expect(cardService.discardPileTop).toEqual(card(7, Suit.HEARTS));
+			expect(gameService.turn.value).toBe(Turn.ME);
+		});
+
+		it("the easy bot plays a single card", () => {
+			gameService.difficulty.set(Difficulty.EASY);
+			gameService.turn.next(Turn.OPPONENT);
+			cardService.setDiscardPile([card(5, Suit.CLUBS)]);
+			setHand(bot, [card(7, Suit.CLUBS), card(7, Suit.HEARTS)]);
+			bot.makeAction();
+			expect(bot.cards.length).toBe(1);
+		});
+	});
+
+	describe("Macau", () => {
+		beforeEach(() => {
+			cardService.setDiscardPile([card(9, Suit.CLUBS)]);
+			spyOn(bot, "makeAction");
+		});
+
+		const playLeavingOneCard = () => {
+			setHand(human, [card(8, Suit.CLUBS), card(5, Suit.DIAMS)]);
+			human.chosenMove = 0;
+			human.playCard();
+		};
+
+		it("is pending once the human is down to one card", () => {
+			playLeavingOneCard();
+			expect(gameService.macauPending()).toBeTrue();
+		});
+
+		it("is not pending with more cards left, or after winning", () => {
+			setHand(human, [
+				card(8, Suit.CLUBS),
+				card(5, Suit.DIAMS),
+				card(6, Suit.DIAMS),
+			]);
+			human.chosenMove = 0;
+			human.playCard();
+			expect(gameService.macauPending()).toBeFalse();
+		});
+
+		it("saying Macau in time avoids the penalty", () => {
+			playLeavingOneCard();
+			gameService.callMacau();
+			jasmine.clock().tick(2600);
+			expect(bot.makeAction).toHaveBeenCalled();
+			expect(human.cards.length).toBe(1);
+			expect(gameService.notice()).toBeNull();
+		});
+
+		it("gives the human extra time before the bot moves", () => {
+			playLeavingOneCard();
+			jasmine.clock().tick(1100);
+			expect(bot.makeAction).not.toHaveBeenCalled();
+			expect(gameService.macauPending()).toBeTrue();
+		});
+
+		it("forgetting Macau costs 2 cards", () => {
+			playLeavingOneCard();
+			jasmine.clock().tick(2600);
+			expect(human.cards.length).toBe(3);
+			expect(gameService.macauPending()).toBeFalse();
+			expect(gameService.notice()).toContain("forgot to say Macau");
+			expect(bot.makeAction).toHaveBeenCalled();
+		});
+
+		it("the penalty message goes away after the human's next turn", () => {
+			playLeavingOneCard();
+			jasmine.clock().tick(2600);
+			gameService.turn.next(Turn.ME);
+			gameService.humanPicks();
+			expect(gameService.notice()).toBeNull();
+		});
+
+		it("restart clears it", () => {
+			playLeavingOneCard();
+			gameService.restart();
+			expect(gameService.macauPending()).toBeFalse();
+		});
+	});
+
+	describe("difficulty", () => {
+		beforeEach(() => {
+			gameService.turn.next(Turn.OPPONENT);
+			cardService.setDiscardPile([card(5, Suit.CLUBS)]);
+		});
+
+		it("easy plays the first legal card and calls a random rank", () => {
+			gameService.difficulty.set(Difficulty.EASY);
+			setHand(bot, [
+				card(RankCharacter.Jack, Suit.CLUBS),
+				card(7, Suit.CLUBS),
+			]);
+			expect((bot as BotPlayer).getBestMove()).toBe(0);
+			const rank = (bot as BotPlayer).chooseRankToCall([
+				card(7, Suit.CLUBS),
+			]);
+			expect(rank).toBeGreaterThanOrEqual(5);
+			expect(rank).toBeLessThanOrEqual(10);
+		});
+
+		it("normal saves the Jack for later", () => {
+			setHand(bot, [
+				card(RankCharacter.Jack, Suit.CLUBS),
+				card(7, Suit.CLUBS),
+			]);
+			expect((bot as BotPlayer).getBestMove()).toBe(1);
+		});
+
+		it("hard attacks right away, normal waits", () => {
+			setHand(bot, [card(7, Suit.CLUBS), card(2, Suit.CLUBS)]);
+			expect((bot as BotPlayer).getBestMove()).toBe(0);
+			gameService.difficulty.set(Difficulty.HARD);
+			expect((bot as BotPlayer).getBestMove()).toBe(1);
+		});
+
+		it("easy keeps playing a legal card even when it is not the best", () => {
+			gameService.difficulty.set(Difficulty.EASY);
+			setHand(bot, [card(8, Suit.HEARTS), card(2, Suit.CLUBS)]);
+			expect((bot as BotPlayer).getBestMove()).toBe(1);
 		});
 	});
 
@@ -818,6 +1091,23 @@ describe("StatusComponent", () => {
 		gameService.suitCalled = Suit.HEARTS;
 		expect(message()).toBe(
 			"Opponent called ♥ – play that suit or pick a card",
+		);
+	});
+
+	it("asks the human to continue a chain or end the turn", () => {
+		gameService.chain.push(card(7, Suit.CLUBS));
+		expect(message()).toBe("Play another 7 – or end your turn");
+	});
+
+	it("reminds the human to say Macau", () => {
+		gameService.macauPending.set(true);
+		expect(message()).toBe("You have one card left – press Macau!");
+	});
+
+	it("puts a notice in front of the usual message", () => {
+		gameService.notice.set("You forgot to say Macau – you picked 2 cards.");
+		expect(message()).toBe(
+			"You forgot to say Macau – you picked 2 cards. Your turn – play a card or pick one",
 		);
 	});
 

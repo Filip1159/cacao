@@ -1,4 +1,5 @@
 .card {
+	animation: card-in 0.25s ease-out;
 	display: flex;
 	flex-direction: column;
 	width: 100px;
@@ -84,5 +85,18 @@
 @media (max-width: 600px) {
 	.card {
 		zoom: 0.6;
+	}
+}
+
+@keyframes card-in {
+	from {
+		opacity: 0;
+		transform: translateY(-16px) scale(0.92);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.card {
+		animation: none;
 	}
 }

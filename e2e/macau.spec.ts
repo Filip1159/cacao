@@ -120,6 +120,7 @@ test.describe("special cards", () => {
 		const game = await startGame(page, 133);
 
 		await game.play(2); // 2♠
+		await game.endTurnButton.click(); // we also hold 2♥, but stop here
 
 		await expect(game.opponentCards).toHaveCount(7, {
 			timeout: BOT_DELAY,
@@ -163,6 +164,7 @@ test.describe("special cards", () => {
 		const game = await startGame(page, 21);
 
 		await game.play(4); // K♦
+		await game.endTurnButton.click(); // K♣ could follow, but stop here
 
 		// the bot just plays 4♦ instead of drawing
 		await expect(game.opponentCards).toHaveCount(4, {
@@ -175,6 +177,7 @@ test.describe("special cards", () => {
 		const game = await startGame(page, 15);
 
 		await game.play(4); // 4♦
+		await game.endTurnButton.click(); // 4♥ could follow, but stop here
 		await expectBotsTurn(game);
 
 		// the bot neither plays nor draws, and the turn comes back to us
@@ -287,6 +290,7 @@ test.describe("penalties against the human", () => {
 		await expectMyTurn(game);
 
 		await game.play(0); // 2♥ on the bot's 2♠
+		await game.endTurnButton.click(); // 2♦ could follow, but stop here
 
 		await expect(game.playerCards).toHaveCount(5);
 		expect(await game.top()).toBe("2♥");
@@ -584,5 +588,121 @@ test.describe("table and controls", () => {
 			game.newGameButton,
 		])
 			await expect(locator).toBeInViewport();
+	});
+});
+
+test.describe("playing several cards of a rank", () => {
+	test("the turn stays open until the last card of the rank or End turn", async ({
+		page,
+	}) => {
+		const game = await startGame(page, 133);
+
+		await game.play(2); // 2♠, and 2♥ is still in hand
+
+		await expect(game.status).toHaveText(
+			"Play another 2 – or end your turn",
+		);
+		await expect(game.endTurnButton).toBeVisible();
+		await expect(game.pickCardButton).toBeDisabled();
+		await expect(game.deckButton).toBeDisabled();
+		expect(await game.hand()).toEqual(["9♣", "4♣", "8♦", "2♥"]);
+		expect(await game.enabledIndexes()).toEqual([3]); // only the other 2
+		await expect(game.opponentCards).toHaveCount(5); // the bot waits
+
+		await game.play(3); // 2♥ ends the turn by itself
+
+		await expect(game.endTurnButton).toBeHidden();
+		await expect(game.discardPile).toContainText("Cards to pick: 4");
+		await expect(game.opponentCards).toHaveCount(9, {
+			timeout: BOT_DELAY,
+		});
+		await expectMyTurn(game);
+	});
+
+	test("End turn keeps the remaining cards", async ({ page }) => {
+		const game = await startGame(page, 133);
+		await game.play(2); // 2♠
+
+		await game.endTurnButton.click();
+
+		await expect(game.playerCards).toHaveCount(4);
+		await expect(game.opponentCards).toHaveCount(7, {
+			timeout: BOT_DELAY,
+		}); // only one 2 counted
+		await expectMyTurn(game);
+	});
+});
+
+test.describe("Macau", () => {
+	test("pressing Macau when down to one card avoids a penalty", async ({
+		page,
+	}) => {
+		const game = await startGame(page, 2);
+		await game.keepCards([1, 3]); // 5♣, 10♠
+		await expect(game.macauButton).toBeDisabled();
+
+		await game.play(0); // 5♣, one card left
+
+		await expect(game.playerCards).toHaveCount(1);
+		await expect(game.status).toHaveText(
+			"You have one card left – press Macau!",
+		);
+		await expect(game.macauButton).toBeEnabled();
+		await game.macauButton.click();
+		await expect(game.macauButton).toBeDisabled();
+
+		await expectMyTurn(game);
+		await expect(game.playerCards).toHaveCount(1);
+		await expect(game.status).not.toContainText("forgot");
+	});
+
+	test("forgetting Macau costs two cards", async ({ page }) => {
+		const game = await startGame(page, 2);
+		await game.keepCards([1, 3]);
+
+		await game.play(0);
+		await expect(game.macauButton).toBeEnabled();
+
+		await expect(game.playerCards).toHaveCount(3, { timeout: BOT_DELAY });
+		await expect(game.macauButton).toBeDisabled();
+		await expectMyTurn(game);
+		await expect(game.status).toContainText(
+			"You forgot to say Macau – you picked 2 cards.",
+		);
+	});
+
+	test("shows when the bot is down to one card", async ({ page }) => {
+		const game = await startGame(page, 2);
+
+		await game.setOpponentHand([{ rank: 6, suit: "♣" }]);
+
+		await expect(page.locator("#opponent_cards")).toContainText(
+			"Opponent · 1 card – Macau!",
+		);
+	});
+});
+
+test.describe("bot difficulty", () => {
+	test("can be chosen in the header, normal by default", async ({ page }) => {
+		const game = await startGame(page, 2, "normal");
+		const select = page.getByLabel("Bot difficulty");
+
+		await expect(select.locator("option")).toHaveText([
+			"easy",
+			"normal",
+			"hard",
+		]);
+		await expect(select).toHaveValue("normal");
+
+		await select.selectOption("hard");
+		await expect(select).toHaveValue("hard");
+		await game.play(1); // the bot still answers
+		await expectMyTurn(game);
+	});
+
+	test("a fresh page starts on normal", async ({ page }) => {
+		await page.goto("/");
+
+		await expect(page.getByLabel("Bot difficulty")).toHaveValue("normal");
 	});
 });

@@ -37,8 +37,6 @@ export class PlayerComponent implements OnInit {
 	ngOnInit(): void {}
 
 	onCardClick(card: Card): void {
-		console.log("[ME] onCardClick");
-		console.log(card);
 		if (this.gameService.isLegalMove(card)) {
 			this.player.chosenMove = this.cards.indexOf(card);
 			if (card.rank.value === RankCharacter.Jack)
@@ -47,7 +45,6 @@ export class PlayerComponent implements OnInit {
 				this.showSuitCalledModal = true;
 			else this.player.makeAction();
 		}
-		console.log("[ME] after onCardClick");
 	}
 
 	onRankSelected(rank: number) {
@@ -76,6 +73,26 @@ export class PlayerComponent implements OnInit {
 
 	doesMissTurn(): boolean {
 		return this.player.state === State.MISSING;
+	}
+
+	canMissTurn(): boolean {
+		return this.doesMissTurn() && this.gameService.chain.length === 0;
+	}
+
+	isChaining(): boolean {
+		return this.gameService.chain.length > 0 && this.isMyTurn();
+	}
+
+	endTurn(): void {
+		this.gameService.endChain();
+	}
+
+	isMacauPending(): boolean {
+		return this.gameService.macauPending();
+	}
+
+	callMacau(): void {
+		this.gameService.callMacau();
 	}
 
 	isMyTurn(): boolean {

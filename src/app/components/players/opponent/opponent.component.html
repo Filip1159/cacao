@@ -1,5 +1,8 @@
 <div id="opponent_cards" class="hand" [class.hand--active]="isActive">
-	<div class="hand__label">Opponent · {{ cards.length }} cards</div>
+	<div class="hand__label">
+		Opponent · {{ cards.length }}
+		{{ cards.length === 1 ? "card – Macau!" : "cards" }}
+	</div>
 	<div class="hand__cards">
 		@for (c of cards; track c) {
 			<app-card-face-down [card]="c"></app-card-face-down>
