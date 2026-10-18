@@ -9,7 +9,7 @@
 	}
 	<button
 		(click)="pickCardFromStack()"
-		[disabled]="isPickCardFromStackDisabled | async"
+		[disabled]="isPickCardDisabled(turn$ | async)"
 	>
 		Pick card
 	</button>

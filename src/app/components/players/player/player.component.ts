@@ -7,7 +7,6 @@ import { Turn } from "../../../model/enum/Turn";
 import { RankCharacter } from "../../../model/Rank";
 import { CardComponent } from "../../cards/card/card.component";
 import { CardCalledModalComponent } from "../../card-called-modal/card-called-modal.component";
-import { map } from "rxjs";
 import { AsyncPipe } from "@angular/common";
 
 @Component({
@@ -52,7 +51,11 @@ export class PlayerComponent implements OnInit {
 	}
 
 	pickCardFromStack(): void {
-		this.player.addCard(this.gameService.cardService.pickCardFromTop());
+		const count =
+			this.player.state === State.CARD_PICKING
+				? this.gameService.cardsToPick
+				: 1;
+		for (let i = 0; i < count; i++) this.player.drawCard();
 		this.gameService.afterCardPlayed(null);
 	}
 
@@ -72,7 +75,11 @@ export class PlayerComponent implements OnInit {
 		return this.gameService.turn.value === Turn.ME;
 	}
 
-	isPickCardFromStackDisabled = this.gameService.turn.pipe(
-		map((turn) => this.doesMissTurn() || turn !== Turn.ME),
-	);
+	// Emits on every turn change so the view is re-checked; the button state
+	// itself is derived from the player's current state in isPickCardDisabled.
+	turn$ = this.gameService.turn;
+
+	isPickCardDisabled(turn: Turn | null): boolean {
+		return this.doesMissTurn() || turn !== Turn.ME;
+	}
 }

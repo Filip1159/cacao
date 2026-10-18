@@ -11,12 +11,13 @@ export class HumanPlayer extends Player {
 	override playCard(): void {
 		if (this.chosenMove !== -1) {
 			const playedCard = this.removeCard(this.chosenMove);
+			this.chosenMove = -1;
 			let cardCalled;
 			if (playedCard.rank.value === RankCharacter.Jack)
 				cardCalled = this.chosenRank;
 			this.gameService.afterCardPlayed(playedCard, cardCalled);
 		} else {
-			this.addCard(this.cardService.pickCardFromTop());
+			this.drawCard();
 			this.gameService.afterCardPlayed(null);
 		}
 	}

@@ -3,6 +3,7 @@ import { Turn } from "../model/enum/Turn";
 import { Player } from "./player/Player";
 import { Card } from "../model/Card";
 import { RankCharacter } from "../model/Rank";
+import { Suit } from "../model/Suit";
 import { State } from "../model/enum/State";
 import { CardService } from "./card.service";
 import { BotPlayer } from "./player/BotPlayer";
@@ -49,14 +50,11 @@ export class GameService {
 	isLegalMove(card: Card): boolean {
 		if (this.players[this.turn.value].state === State.CARD_PICKING)
 			return false;
-		if (
-			this.players[this.turn.value].state === State.CARD_CALLED &&
-			this.cardCalled !== card.rank.value
-		)
-			return false;
+		if (this.players[this.turn.value].state === State.CARD_CALLED)
+			return this.cardCalled === card.rank.value;
 		if (this.players[this.turn.value].state === State.MISSING) return false;
 		return (
-			card.rank === this.cardService.discardPileTop.rank ||
+			card.rank.value === this.cardService.discardPileTop.rank.value ||
 			card.suit === this.cardService.discardPileTop.suit
 		);
 	}
@@ -79,8 +77,10 @@ export class GameService {
 				this.cardCalled = cardCalled!;
 				break;
 			case RankCharacter.King:
-				this.players[this.turn.value].state = State.CARD_PICKING;
-				this.cardsToPick = 5;
+				if (card.suit === Suit.HEARTS || card.suit === Suit.SPADES) {
+					this.players[this.turn.value].state = State.CARD_PICKING;
+					this.cardsToPick = 5;
+				}
 				break;
 		}
 	}

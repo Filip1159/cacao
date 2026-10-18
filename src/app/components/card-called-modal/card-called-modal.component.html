@@ -4,13 +4,8 @@
 >
 	<div class="card-called-modal__content">
 		<span>Select rank you want to call:</span>
-		<select (change)="onRankSelected($event)">
-			<option>5</option>
-			<option>6</option>
-			<option>7</option>
-			<option>8</option>
-			<option>9</option>
-			<option>10</option>
-		</select>
+		@for (rank of ranks; track rank) {
+			<button (click)="onSelected.emit(rank)">{{ rank }}</button>
+		}
 	</div>
 </div>

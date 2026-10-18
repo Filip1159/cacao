@@ -18,7 +18,5 @@ export class CardCalledModalComponent implements OnInit {
 
 	ngOnInit(): void {}
 
-	onRankSelected(e: Event) {
-		this.onSelected.emit(Number((e.target as HTMLSelectElement).value));
-	}
+	readonly ranks = [5, 6, 7, 8, 9, 10];
 }

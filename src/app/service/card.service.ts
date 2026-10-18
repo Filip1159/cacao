@@ -30,16 +30,25 @@ export class CardService {
 	}
 
 	pickBasicCardFromTop(): Card {
-		let result = this.pickCardFromTop();
+		let result = this.deck.pop()!;
 		while (CardService.isSpecialCard(result)) {
 			this.deck.unshift(result);
-			result = this.pickCardFromTop();
+			result = this.deck.pop()!;
 		}
 		return result;
 	}
 
-	pickCardFromTop(): Card {
-		return this.deck.pop()!;
+	pickCardFromTop(): Card | undefined {
+		if (this.deck.length === 0) this.reshuffleDiscardPile();
+		return this.deck.pop();
+	}
+
+	protected reshuffleDiscardPile(): void {
+		if (this.discardPile.length <= 1) return;
+		const top = this.discardPile.pop()!;
+		this.deck = this.discardPile;
+		this.discardPile = [top];
+		this.shuffleDeck();
 	}
 
 	get discardPileTop(): Card {
