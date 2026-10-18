@@ -22,12 +22,6 @@
 						"browser": "src/main.ts",
 						"tsConfig": "tsconfig.app.json",
 						"inlineStyleLanguage": "scss",
-						"assets": [
-							{
-								"glob": "**/*",
-								"input": "public"
-							}
-						],
 						"styles": ["src/styles.scss"],
 						"scripts": []
 					},
@@ -65,10 +59,10 @@
 					"builder": "@angular-devkit/build-angular:dev-server",
 					"configurations": {
 						"production": {
-							"buildTarget": "raspberry-ui:build:production"
+							"buildTarget": "cacao:build:production"
 						},
 						"development": {
-							"buildTarget": "raspberry-ui:build:development"
+							"buildTarget": "cacao:build:development"
 						}
 					},
 					"defaultConfiguration": "development"
@@ -81,12 +75,6 @@
 					"options": {
 						"tsConfig": "tsconfig.spec.json",
 						"inlineStyleLanguage": "scss",
-						"assets": [
-							{
-								"glob": "**/*",
-								"input": "public"
-							}
-						],
 						"styles": ["src/styles.scss"],
 						"scripts": []
 					}
