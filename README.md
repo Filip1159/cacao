@@ -1,7 +1,6 @@
-# Cacao – Macau card game
+# Macau card game
 
-A single-player [Macau](<https://en.wikipedia.org/wiki/Macau_(card_game)>) game
-against a bot, in the browser. Get rid of all your cards before the bot does:
+A single-player Macau game against a bot, in the browser. Get rid of all your cards before the bot does:
 play a card that matches the rank or suit of the top card, or pick one from the
 deck. The special cards are listed under _Rules_ in the app, and the full game
 is described on [Wikipedia](<https://en.wikipedia.org/wiki/Macau_(card_game)>).

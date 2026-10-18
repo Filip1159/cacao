@@ -3,7 +3,7 @@
 	"version": 1,
 	"newProjectRoot": "projects",
 	"projects": {
-		"cacao": {
+		"macau-card-game": {
 			"projectType": "application",
 			"schematics": {
 				"@schematics/angular:component": {
@@ -17,7 +17,7 @@
 				"build": {
 					"builder": "@angular-devkit/build-angular:application",
 					"options": {
-						"outputPath": "dist/cacao",
+						"outputPath": "dist/macau-card-game",
 						"index": "src/index.html",
 						"browser": "src/main.ts",
 						"tsConfig": "tsconfig.app.json",
@@ -66,10 +66,10 @@
 					"builder": "@angular-devkit/build-angular:dev-server",
 					"configurations": {
 						"production": {
-							"buildTarget": "cacao:build:production"
+							"buildTarget": "macau-card-game:build:production"
 						},
 						"development": {
-							"buildTarget": "cacao:build:development"
+							"buildTarget": "macau-card-game:build:development"
 						}
 					},
 					"defaultConfiguration": "development"

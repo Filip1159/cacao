@@ -5,6 +5,9 @@ on:
     branches: [master]
   pull_request:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -48,3 +51,33 @@ jobs:
           name: playwright-test-results
           path: test-results/
           retention-days: 7
+
+  # Publishes the site once both test jobs have passed on master
+  deploy:
+    needs: [build-and-unit-tests, e2e-tests]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Production build for GitHub Pages
+        run: npx ng build --base-href /Macau-card-game/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/macau-card-game/browser
+      - id: deployment
+        uses: actions/deploy-pages@v4

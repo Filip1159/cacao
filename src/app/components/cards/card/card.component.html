@@ -9,11 +9,9 @@
 		[class]="{ 'suit--red': isRed, 'suit--black': isBlack }"
 		>{{ card.suit }}</span
 	>
-	<span
-		class="cacao"
-		[class]="{ 'cacao--red': isRed, 'cacao--black': isBlack }"
-		>{{ card.suit }}</span
-	>
+	<span class="pip" [class]="{ 'pip--red': isRed, 'pip--black': isBlack }">{{
+		card.suit
+	}}</span>
 	<span
 		class="suit suit--upside_down"
 		[class]="{ 'suit--red': isRed, 'suit--black': isBlack }"
