@@ -5,7 +5,6 @@ import { Suit, getAllSuits } from "../../model/Suit";
 	selector: "app-suit-called-modal",
 	templateUrl: "./suit-called-modal.component.html",
 	styleUrls: ["./suit-called-modal.component.scss"],
-	standalone: true,
 })
 export class SuitCalledModalComponent {
 	@Output()

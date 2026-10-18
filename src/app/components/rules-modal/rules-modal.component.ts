@@ -4,7 +4,6 @@ import { Component, EventEmitter, Input, Output } from "@angular/core";
 	selector: "app-rules-modal",
 	templateUrl: "./rules-modal.component.html",
 	styleUrls: ["./rules-modal.component.scss"],
-	standalone: true,
 })
 export class RulesModalComponent {
 	@Input() visible = false;

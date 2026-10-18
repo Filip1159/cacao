@@ -1,60 +1,46 @@
-import { Component } from "@angular/core";
-import { AsyncPipe } from "@angular/common";
+import { Component, computed } from "@angular/core";
 import { GameService } from "../../service/game.service";
-import { State } from "../../model/enum/State";
 import { Turn } from "../../model/enum/Turn";
 
 @Component({
 	selector: "app-status",
 	templateUrl: "./status.component.html",
 	styleUrls: ["./status.component.scss"],
-	standalone: true,
-	imports: [AsyncPipe],
 })
 export class StatusComponent {
-	// emits on every turn change so the view is re-checked
-	turn$ = this.gameService.turn;
+	readonly turn = computed(() => this.game.state().turn);
+	readonly message = computed(() => {
+		const notice = this.game.notice();
+		const base = this.baseMessage();
+		return notice ? `${notice} ${base}` : base;
+	});
 
-	constructor(public gameService: GameService) {}
+	constructor(readonly game: GameService) {}
 
-	get message(): string {
-		const notice = this.gameService.notice();
-		return notice ? `${notice} ${this.baseMessage}` : this.baseMessage;
-	}
-
-	private get baseMessage(): string {
-		const game = this.gameService;
-		if (game.winner() !== null) return "Game over";
-		if (game.macauPending()) return "You have one card left – press Macau!";
-		if (game.turn.value === Turn.OPPONENT) return "Opponent's turn…";
-		const me = game.players[Turn.ME];
-		if (game.chain.length > 0)
-			return `Play another ${game.chain[0].rank} – or end your turn`;
-		const canCounter = me.hasCounter();
-		switch (me.state) {
-			case State.CARD_PICKING: {
-				const n = game.cardsToPick;
+	private baseMessage(): string {
+		const state = this.game.state();
+		if (state.winner !== null) return "Game over";
+		if (state.macauPending) return "You have one card left – press Macau!";
+		if (state.turn === Turn.OPPONENT) return "Opponent's turn…";
+		if (state.chain.length > 0)
+			return `Play another ${state.chain[0].rank} – or end your turn`;
+		const canCounter = this.game.hasCounter();
+		const { obligation } = state;
+		switch (obligation.kind) {
+			case "pick":
 				return canCounter
-					? `Pick ${n} cards – or pass the penalty on with another ${game.cardService.discardPileTop.rank}`
-					: `You must pick ${n} cards`;
-			}
-			case State.MISSING:
+					? `Pick ${obligation.count} cards – or pass the penalty on with another ${this.game.top().rank}`
+					: `You must pick ${obligation.count} cards`;
+			case "miss":
 				return canCounter
 					? "You miss a turn – or pass it on with a 4"
 					: "You miss a turn";
-			case State.CARD_CALLED:
-				return `Opponent called ${game.cardCalled} – play it or pick a card`;
-			case State.SUIT_CALLED:
-				return `Opponent called ${game.suitCalled} – play that suit or pick a card`;
-			default:
+			case "rank":
+				return `Opponent called ${obligation.rank} – play it or pick a card`;
+			case "suit":
+				return `Opponent called ${obligation.suit} – play that suit or pick a card`;
+			case "none":
 				return "Your turn – play a card or pick one";
 		}
-	}
-
-	get isMyTurn(): boolean {
-		return (
-			this.gameService.winner() === null &&
-			this.gameService.turn.value === Turn.ME
-		);
 	}
 }

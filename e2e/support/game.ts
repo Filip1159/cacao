@@ -97,34 +97,18 @@ export class Game {
 		return result;
 	}
 
-	/**
-	 * Shortens the human's hand to a single card (dev-mode debug API), so one
-	 * move ends the game.
-	 */
+	/** Shortens the human's hand to a single card (dev-mode test hook `macauGame`), so one move ends the game. */
 	async keepOnlyCard(index: number): Promise<void> {
-		await this.page.evaluate((i) => {
-			const ng = (window as any).ng;
-			const cards = ng.getComponent(
-				document.querySelector("app-player"),
-			).cards;
-			const keep = cards[i];
-			cards.length = 0;
-			cards.push(keep);
-			ng.applyChanges(document.querySelector("app-player"));
-		}, index);
+		await this.keepCards([index]);
 	}
 
-	/** Keeps only the human's cards at the given positions (dev-mode debug API). */
+	/** Keeps only the human's cards at the given positions. */
 	async keepCards(indexes: number[]): Promise<void> {
 		await this.page.evaluate((keep) => {
-			const ng = (window as any).ng;
-			const cards = ng.getComponent(
-				document.querySelector("app-player"),
-			).cards;
-			const kept = keep.map((i) => cards[i]);
-			cards.length = 0;
-			cards.push(...kept);
-			ng.applyChanges(document.querySelector("app-player"));
+			const game = (window as any).macauGame;
+			const hands = [...game.state().hands];
+			hands[0] = keep.map((i) => hands[0][i]);
+			game.patch({ hands });
 		}, indexes);
 	}
 
@@ -133,34 +117,30 @@ export class Game {
 		cards: { rank: number; suit: string }[],
 	): Promise<void> {
 		await this.page.evaluate((newCards) => {
-			const ng = (window as any).ng;
-			const hand = ng.getComponent(
-				document.querySelector("app-opponent"),
-			).cards;
-			hand.length = 0;
-			hand.push(
-				...newCards.map((c) => ({
-					rank: { value: c.rank, toString: () => String(c.rank) },
-					suit: c.suit,
-				})),
-			);
-			ng.applyChanges(document.querySelector("app-opponent"));
+			const game = (window as any).macauGame;
+			const hands = [...game.state().hands];
+			hands[1] = newCards.map((c) => ({
+				rank: { value: c.rank, toString: () => String(c.rank) },
+				suit: c.suit,
+			}));
+			game.patch({ hands });
 		}, cards);
 	}
 
-	/** Adds a card to the human's hand (dev-mode debug API). */
+	/** Adds a card to the human's hand. */
 	async giveCard(rank: number, suit: string): Promise<void> {
 		await this.page.evaluate(
 			({ rank, suit }) => {
-				const ng = (window as any).ng;
-				const cards = ng.getComponent(
-					document.querySelector("app-player"),
-				).cards;
-				cards.push({
-					rank: { value: rank, toString: () => String(rank) },
-					suit,
-				});
-				ng.applyChanges(document.querySelector("app-player"));
+				const game = (window as any).macauGame;
+				const hands = [...game.state().hands];
+				hands[0] = [
+					...hands[0],
+					{
+						rank: { value: rank, toString: () => String(rank) },
+						suit,
+					},
+				];
+				game.patch({ hands });
 			},
 			{ rank, suit },
 		);

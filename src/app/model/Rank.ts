@@ -5,6 +5,14 @@ export enum RankCharacter {
 	Ace,
 }
 
+/** Ranks with a rule of their own (a 4 makes the next player miss a turn). */
+export const RANK_TWO = 2;
+export const RANK_THREE = 3;
+export const RANK_FOUR = 4;
+
+/** A Jack can ask for any rank from 5 to 10, the ones without an effect. */
+export const CALLABLE_RANKS = [5, 6, 7, 8, 9, 10];
+
 export class Rank {
 	value: RankCharacter | number;
 

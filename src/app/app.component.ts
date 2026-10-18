@@ -12,7 +12,6 @@ import { DiscardPileComponent } from "./components/discard-pile/discard-pile.com
 	selector: "app-root",
 	templateUrl: "./app.component.html",
 	styleUrls: ["./app.component.scss"],
-	standalone: true,
 	imports: [
 		PlayerComponent,
 		OpponentComponent,

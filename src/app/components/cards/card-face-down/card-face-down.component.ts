@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from "@angular/core";
+import { Component, Input } from "@angular/core";
 import { Rank } from "../../../model/Rank";
 import { Suit } from "../../../model/Suit";
 import { Card } from "../../../model/Card";
@@ -7,10 +7,7 @@ import { Card } from "../../../model/Card";
 	selector: "app-card-face-down",
 	templateUrl: "./card-face-down.component.html",
 	styleUrls: ["./card-face-down.component.scss"],
-	standalone: true,
 })
-export class CardFaceDownComponent implements OnInit {
+export class CardFaceDownComponent {
 	@Input() card: Card = { rank: new Rank(2), suit: Suit.HEARTS };
-
-	ngOnInit(): void {}
 }

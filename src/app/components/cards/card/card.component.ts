@@ -3,7 +3,6 @@ import {
 	ElementRef,
 	Input,
 	OnChanges,
-	OnInit,
 	SimpleChanges,
 } from "@angular/core";
 import { Card } from "../../../model/Card";
@@ -13,9 +12,8 @@ import { Suit } from "../../../model/Suit";
 	selector: "app-card",
 	templateUrl: "./card.component.html",
 	styleUrls: ["./card.component.scss"],
-	standalone: true,
 })
-export class CardComponent implements OnInit, OnChanges {
+export class CardComponent implements OnChanges {
 	@Input() card!: Card;
 	@Input() disabled!: boolean;
 
@@ -37,8 +35,6 @@ export class CardComponent implements OnInit, OnChanges {
 			{ duration: 250, easing: "ease-out" },
 		);
 	}
-
-	ngOnInit(): void {}
 
 	get isRed(): boolean {
 		return this.card.suit === Suit.DIAMS || this.card.suit === Suit.HEARTS;

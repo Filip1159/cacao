@@ -57,8 +57,8 @@ npm run e2e                          # end-to-end tests (Playwright)
 
 The end-to-end tests start the dev server themselves. They replace
 `Math.random` with a seeded generator so that every seed deals the same
-cards, and they use Angular's dev-mode debug API (`window.ng`) to shorten
-hands. The scenarios and seeds are described at the top of
+cards, and they use a dev-mode test hook (`window.macauGame`, the `GameService`)
+to shorten hands. The scenarios and seeds are described at the top of
 `e2e/macau.spec.ts`.
 
 CI (`.github/workflows/ci.yml`) checks formatting, builds the app and runs both
@@ -66,10 +66,17 @@ test suites on every push to `master` and on pull requests.
 
 ### Code layout
 
-- `src/app/model` – cards, ranks, suits and the game enums
-- `src/app/service/game.service.ts` – the game rules: turns, effects of the
-  cards, penalties, winner, Macau, restart
-- `src/app/service/card.service.ts` – deck and discard pile
-- `src/app/service/player` – the human player and the bot
+- `src/app/service/rules.ts` – the game rules as pure functions over an
+  immutable `GameState` (hands, deck, discard pile and what the player on turn
+  has to deal with): legal moves, effects of the cards, penalties, misses,
+  chains, drawing and reshuffling, winner, Macau
+- `src/app/service/bot.ts` – the bot's strategy (also pure), one function per
+  decision, difficulty levels
+- `src/app/service/game.service.ts` – holds the current `GameState` in a signal,
+  exposes `computed` selectors and the human's moves (`play`, `pick`, `miss`,
+  `endTurn`, `callMacau`), runs the bot's timer and restarts the game; the
+  shuffle is injected (`SHUFFLE`) so tests can deal a predictable deck
+- `src/app/model` – cards, ranks, suits, the deck helpers (`deck.ts`) and the
+  game enums
 - `src/app/components` – table, hands, draw/discard pile, status line, dialogs
 - `STATUS.md` – what is implemented

@@ -1,40 +1,37 @@
-<div id="player_cards" class="hand" [class.hand--active]="isMyTurn()">
+<div id="player_cards" class="hand" [class.hand--active]="game.isMyTurn()">
 	<div class="hand__label">
-		You · {{ cards.length }} {{ cards.length === 1 ? "card" : "cards" }}
+		You · {{ cards().length }} {{ cards().length === 1 ? "card" : "cards" }}
 	</div>
 	<div class="hand__cards">
-		@for (c of cards; track c) {
+		@for (c of cards(); track c) {
 			<app-card
 				#card
 				[card]="c"
 				(click)="onCardClick(c)"
-				[disabled]="!isLegalMove(c) || !isMyTurn()"
+				[disabled]="!game.isLegalMove(c) || !game.isMyTurn()"
 			></app-card>
 		}
 	</div>
 	<div class="hand__actions">
-		<button
-			(click)="pickCardFromStack()"
-			[disabled]="isPickCardDisabled(turn$ | async)"
-		>
+		<button (click)="game.pick()" [disabled]="!game.canHumanPick()">
 			Pick card
 		</button>
-		<button (click)="missTurn()" [disabled]="!canMissTurn()">
+		<button (click)="game.miss()" [disabled]="!game.canMiss()">
 			Miss turn
 		</button>
-		@if (isChaining()) {
-			<button (click)="endTurn()">End turn</button>
+		@if (game.isChaining()) {
+			<button (click)="game.endTurn()">End turn</button>
 		}
-		<button (click)="callMacau()" [disabled]="!isMacauPending()">
+		<button (click)="game.callMacau()" [disabled]="!game.macauPending()">
 			Macau!
 		</button>
 	</div>
 	<app-suit-called-modal
 		(onSelected)="onSuitSelected($event)"
-		[visible]="showSuitCalledModal"
+		[visible]="pending()?.call === 'suit'"
 	></app-suit-called-modal>
 	<app-card-called-modal
 		(onSelected)="onRankSelected($event)"
-		[visible]="showCardCalledModal"
+		[visible]="pending()?.call === 'rank'"
 	></app-card-called-modal>
 </div>

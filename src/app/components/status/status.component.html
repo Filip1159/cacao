@@ -1,8 +1,8 @@
 <div
 	class="status"
-	[class.status--mine]="isMyTurn"
-	[attr.data-turn]="turn$ | async"
+	[class.status--mine]="game.isMyTurn()"
+	[attr.data-turn]="turn()"
 	role="status"
 >
-	{{ message }}
+	{{ message() }}
 </div>
