@@ -12,6 +12,7 @@ import { Game, startGame } from "./support/game";
  *   5     6♠   6♥ 9♠ K♣ 8♠ 2♠        2♠ playable
  *   8     10♥  7♠ 10♠ 10♦ Q♥ 4♥      4♥ playable
  *   21    7♦   K♣ 3♣ 8♦ 9♥ K♦        K♦ playable; bot answers with 4♦
+ *   33    7♠   2♥ A♠ 2♠ 4♣ 9♠        A♠ playable
  *   62    4♥   9♦ 2♦ 7♣ 9♣ 3♦ (+8♥)  after drawing, bot plays a 4
  */
 const BOT_DELAY = 5_000; // the bot waits ~1 s before acting
@@ -176,6 +177,44 @@ test.describe("special cards", () => {
 			timeout: BOT_DELAY,
 		});
 		await expectMyTurn(game);
+	});
+
+	test("A asks for a suit; the bot follows it and the human is then bound to the bot's call", async ({
+		page,
+	}) => {
+		const game = await startGame(page, 33);
+
+		await game.play(1); // A♠
+		await expect(game.suitModal).toBeVisible();
+		await expect(game.suitModal.getByRole("button")).toHaveText([
+			"♥",
+			"♦",
+			"♠",
+			"♣",
+		]);
+		await expect(game.playerCards).toHaveCount(5); // not played yet
+
+		await game.suitModal.getByRole("button", { name: "♥" }).click();
+
+		await expect(game.suitModal).toBeHidden();
+		await expect(game.playerCards).toHaveCount(4);
+		await expect(game.discardPile).toContainText("Called suit: ♥");
+		// the bot follows with A♥ (a heart) and calls ♦ itself
+		await expect(game.opponentCards).toHaveCount(4, {
+			timeout: BOT_DELAY,
+		});
+		expect(await game.top()).toBe("A♥");
+		await expect(game.playerState).toHaveText("SUIT_CALLED");
+		await expect(game.discardPile).toContainText("Called suit: ♦");
+		await expectMyTurn(game);
+
+		// we hold no ♦, so we can only pick a card, which ends the restriction
+		expect(await game.enabledIndexes()).toEqual([]);
+		await game.pickCardButton.click();
+		await expect(game.playerCards).toHaveCount(5);
+		await expect(game.discardPile).not.toContainText("Called suit", {
+			timeout: BOT_DELAY,
+		});
 	});
 
 	test("the rank dialog offers 5 to 10, including 5", async ({ page }) => {

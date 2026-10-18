@@ -2,6 +2,7 @@ import { Player } from "./Player";
 import { GameService } from "../game.service";
 import { CardService } from "../card.service";
 import { RankCharacter } from "../../model/Rank";
+import { Suit, getAllSuits } from "../../model/Suit";
 
 export class BotPlayer extends Player {
 	constructor(gameService: GameService, cardService: CardService) {
@@ -27,6 +28,17 @@ export class BotPlayer extends Player {
 		return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
 	}
 
+	chooseSuitToCall(): Suit {
+		const counts = new Map<Suit, number>();
+		for (const card of this.cards)
+			counts.set(card.suit, (counts.get(card.suit) ?? 0) + 1);
+		if (counts.size === 0) {
+			const suits = getAllSuits();
+			return suits[Math.floor(Math.random() * suits.length)];
+		}
+		return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
+	}
+
 	override playCard() {
 		console.log("BotPlayer::playCard");
 		this.chosenMove = this.getBestMove();
@@ -37,7 +49,15 @@ export class BotPlayer extends Player {
 				playedCard.rank.value === RankCharacter.Jack
 					? this.chooseRankToCall()
 					: undefined;
-			this.gameService.afterCardPlayed(playedCard, cardCalled);
+			const suitCalled =
+				playedCard.rank.value === RankCharacter.Ace
+					? this.chooseSuitToCall()
+					: undefined;
+			this.gameService.afterCardPlayed(
+				playedCard,
+				cardCalled,
+				suitCalled,
+			);
 		} else {
 			this.drawCard();
 			this.gameService.afterCardPlayed(null);

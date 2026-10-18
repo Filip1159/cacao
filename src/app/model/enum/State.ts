@@ -2,6 +2,7 @@ export enum State {
 	WAITING_FOR_CARD,
 	CARD_PICKING,
 	CARD_CALLED,
+	SUIT_CALLED,
 	MISSING,
 }
 
@@ -13,6 +14,8 @@ export const stateToString = (state: State) => {
 			return "CARD_PICKING";
 		case State.CARD_CALLED:
 			return "CARD_CALLED";
+		case State.SUIT_CALLED:
+			return "SUIT_CALLED";
 		case State.MISSING:
 			return "MISSING";
 	}

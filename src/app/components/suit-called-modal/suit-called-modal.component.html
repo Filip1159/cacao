@@ -1,0 +1,11 @@
+<div
+	class="suit-called-modal"
+	[class]="{ 'suit-called-modal--visible': visible }"
+>
+	<div class="suit-called-modal__content">
+		<span>Select suit you want to call:</span>
+		@for (suit of suits; track suit) {
+			<button (click)="onSelected.emit(suit)">{{ suit }}</button>
+		}
+	</div>
+</div>

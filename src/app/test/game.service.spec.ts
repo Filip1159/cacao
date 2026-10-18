@@ -9,6 +9,7 @@ import { Rank, RankCharacter } from "../model/Rank";
 import { State } from "../model/enum/State";
 import { Turn } from "../model/enum/Turn";
 import { PlayerComponent } from "../components/players/player/player.component";
+import { SuitCalledModalComponent } from "../components/suit-called-modal/suit-called-modal.component";
 import { CardCalledModalComponent } from "../components/card-called-modal/card-called-modal.component";
 
 const card = (rank: number, suit: Suit): Card => ({
@@ -114,6 +115,20 @@ describe("Game logic", () => {
 			expect(gameService.isLegalMove(card(9, Suit.SPADES))).toBeFalse();
 		});
 
+		it("after an Ace only accepts the called suit, regardless of rank", () => {
+			cardService.setDiscardPile([card(RankCharacter.Ace, Suit.SPADES)]);
+			human.state = State.SUIT_CALLED;
+			gameService.suitCalled = Suit.HEARTS;
+			expect(gameService.isLegalMove(card(9, Suit.HEARTS))).toBeTrue();
+			expect(
+				gameService.isLegalMove(card(RankCharacter.Ace, Suit.HEARTS)),
+			).toBeTrue();
+			expect(gameService.isLegalMove(card(9, Suit.SPADES))).toBeFalse();
+			expect(
+				gameService.isLegalMove(card(RankCharacter.Ace, Suit.SPADES)),
+			).toBeFalse();
+		});
+
 		it("after a Jack only accepts the called rank, regardless of suit", () => {
 			cardService.setDiscardPile([card(RankCharacter.Jack, Suit.SPADES)]);
 			human.state = State.CARD_CALLED;
@@ -181,6 +196,33 @@ describe("Game logic", () => {
 				expect(bot.state).toBe(State.WAITING_FOR_CARD);
 				expect(gameService.cardsToPick).toBe(0);
 			});
+		});
+
+		it("A makes the opponent play the called suit", () => {
+			setHand(human, [
+				card(RankCharacter.Ace, Suit.CLUBS),
+				card(5, Suit.DIAMS),
+			]);
+			cardService.setDiscardPile([card(9, Suit.CLUBS)]);
+			human.chosenMove = 0;
+			human.chosenSuit = Suit.HEARTS;
+			human.playCard();
+			expect(bot.state).toBe(State.SUIT_CALLED);
+			expect(gameService.suitCalled).toBe(Suit.HEARTS);
+		});
+
+		it("the called suit is forgotten once the opponent has moved", () => {
+			setHand(human, [card(RankCharacter.Ace, Suit.CLUBS)]);
+			setHand(bot, [card(9, Suit.HEARTS), card(3, Suit.SPADES)]);
+			cardService.setDiscardPile([card(9, Suit.CLUBS)]);
+			human.chosenMove = 0;
+			human.chosenSuit = Suit.HEARTS;
+			human.playCard();
+			(bot.makeAction as jasmine.Spy).and.callThrough();
+			bot.makeAction();
+			expect(cardService.discardPileTop).toEqual(card(9, Suit.HEARTS));
+			expect(gameService.suitCalled).toBeNull();
+			expect(human.state).toBe(State.WAITING_FOR_CARD);
 		});
 
 		it("playing a card moves it to the discard pile and passes the turn", () => {
@@ -251,6 +293,48 @@ describe("Game logic", () => {
 			expect(bot.cards.length).toBe(3);
 			expect(cardService.discardPileTop).toEqual(
 				card(RankCharacter.Jack, Suit.SPADES),
+			);
+		});
+
+		it("calls the suit it holds most of when playing an Ace", () => {
+			setHand(bot, [
+				card(RankCharacter.Ace, Suit.CLUBS),
+				card(7, Suit.HEARTS),
+				card(8, Suit.HEARTS),
+				card(9, Suit.SPADES),
+			]);
+			cardService.setDiscardPile([card(5, Suit.CLUBS)]);
+			bot.makeAction();
+			expect(cardService.discardPileTop.rank.value).toBe(
+				RankCharacter.Ace,
+			);
+			expect(gameService.suitCalled).toBe(Suit.HEARTS);
+			expect(human.state).toBe(State.SUIT_CALLED);
+		});
+
+		it("plays a card of the called suit after the human's Ace", () => {
+			setHand(bot, [
+				card(3, Suit.SPADES),
+				card(7, Suit.HEARTS),
+				card(9, Suit.SPADES),
+			]);
+			cardService.setDiscardPile([card(RankCharacter.Ace, Suit.SPADES)]);
+			bot.state = State.SUIT_CALLED;
+			gameService.suitCalled = Suit.HEARTS;
+			bot.makeAction();
+			expect(cardService.discardPileTop).toEqual(card(7, Suit.HEARTS));
+			expect(bot.cards.length).toBe(2);
+		});
+
+		it("draws one card when it cannot follow the called suit", () => {
+			setHand(bot, [card(3, Suit.SPADES), card(9, Suit.SPADES)]);
+			cardService.setDiscardPile([card(RankCharacter.Ace, Suit.SPADES)]);
+			bot.state = State.SUIT_CALLED;
+			gameService.suitCalled = Suit.HEARTS;
+			bot.makeAction();
+			expect(bot.cards.length).toBe(3);
+			expect(cardService.discardPileTop).toEqual(
+				card(RankCharacter.Ace, Suit.SPADES),
 			);
 		});
 
@@ -340,5 +424,27 @@ describe("CardCalledModalComponent", () => {
 		buttons[0].click();
 		buttons[5].click();
 		expect(emitted).toEqual([5, 10]);
+	});
+});
+
+describe("SuitCalledModalComponent", () => {
+	it("offers all four suits and emits the clicked one", () => {
+		const fixture = TestBed.createComponent(SuitCalledModalComponent);
+		fixture.detectChanges();
+		const emitted: Suit[] = [];
+		fixture.componentInstance.onSelected.subscribe((suit: Suit) =>
+			emitted.push(suit),
+		);
+		const buttons: HTMLButtonElement[] = Array.from(
+			fixture.nativeElement.querySelectorAll("button"),
+		);
+		expect(buttons.map((b) => b.textContent!.trim())).toEqual([
+			Suit.HEARTS,
+			Suit.DIAMS,
+			Suit.SPADES,
+			Suit.CLUBS,
+		]);
+		buttons[2].click();
+		expect(emitted).toEqual([Suit.SPADES]);
 	});
 });

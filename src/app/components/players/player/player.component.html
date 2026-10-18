@@ -17,6 +17,10 @@
 		Miss turn :(
 	</button>
 	<span>{{ state }}</span>
+	<app-suit-called-modal
+		(onSelected)="onSuitSelected($event)"
+		[visible]="showSuitCalledModal"
+	></app-suit-called-modal>
 	<app-card-called-modal
 		(onSelected)="onRankSelected($event)"
 		[visible]="showCardCalledModal"

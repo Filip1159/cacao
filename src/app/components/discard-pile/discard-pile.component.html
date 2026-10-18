@@ -1,1 +1,7 @@
 <app-card [card]="this.gameService.cardService.discardPileTop"></app-card>
+@if (gameService.cardCalled !== null) {
+	<span class="call">Called rank: {{ gameService.cardCalled }}</span>
+}
+@if (gameService.suitCalled !== null) {
+	<span class="call">Called suit: {{ gameService.suitCalled }}</span>
+}

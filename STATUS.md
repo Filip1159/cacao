@@ -62,7 +62,7 @@ A card is playable if it matches the rank or suit of the top of the discard pile
 
 ### Core rules
 - [ ] **Win/lose condition**: game ends when a player's hand is empty (check after every play)
-- [ ] **Ace**: playing an Ace lets the player call a suit; next player must follow that suit (human suit-picker modal + bot logic). Needs a new state (e.g. `SUIT_CALLED`) and `calledSuit` in `GameService`
+- [x] **Ace**: playing an Ace lets the player call a suit; next player must follow that suit (`SUIT_CALLED` state, `suitCalled` in `GameService`, suit-picker modal, called rank/suit shown under the discard pile)
 - [ ] **Counter-playing penalty cards**: allow playing another 2/3/K (same rank, or per chosen rule set) while in `CARD_PICKING`, stacking the penalty instead of drawing
 - [ ] **Counter a 4** with another 4 (stacking misses) – decide if included
 - [ ] **Reshuffle**: when the draw deck is empty, shuffle the discard pile (except top card) back into the deck
@@ -71,7 +71,7 @@ A card is playable if it matches the rank or suit of the top of the discard pile
 
 ### Bot
 - [ ] Choose the rank to call when playing a Jack (e.g. most-frequent rank in its hand, or random 5–10)
-- [ ] Choose the suit to call when playing an Ace (suit it holds most of)
+- [x] Choose the suit to call when playing an Ace (suit it holds most of)
 - [ ] Basic strategy instead of "first legal card" (e.g. prefer attack cards when the human has few cards, save Jacks/Aces) – optional but cheap to add
 - [ ] Bot should defend against penalty cards if counter-play is added
 

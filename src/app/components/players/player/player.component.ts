@@ -5,6 +5,8 @@ import { HumanPlayer } from "../../../service/player/HumanPlayer";
 import { State, stateToString } from "../../../model/enum/State";
 import { Turn } from "../../../model/enum/Turn";
 import { RankCharacter } from "../../../model/Rank";
+import { Suit } from "../../../model/Suit";
+import { SuitCalledModalComponent } from "../../suit-called-modal/suit-called-modal.component";
 import { CardComponent } from "../../cards/card/card.component";
 import { CardCalledModalComponent } from "../../card-called-modal/card-called-modal.component";
 import { AsyncPipe } from "@angular/common";
@@ -14,12 +16,18 @@ import { AsyncPipe } from "@angular/common";
 	templateUrl: "./player.component.html",
 	styleUrls: ["./player.component.scss"],
 	standalone: true,
-	imports: [CardComponent, CardCalledModalComponent, AsyncPipe],
+	imports: [
+		CardComponent,
+		CardCalledModalComponent,
+		SuitCalledModalComponent,
+		AsyncPipe,
+	],
 })
 export class PlayerComponent implements OnInit {
 	cards: Card[];
 	player: HumanPlayer;
 	showCardCalledModal: boolean = false;
+	showSuitCalledModal: boolean = false;
 
 	constructor(private gameService: GameService) {
 		this.cards = gameService.players[0].cards;
@@ -35,6 +43,8 @@ export class PlayerComponent implements OnInit {
 			this.player.chosenMove = this.cards.indexOf(card);
 			if (card.rank.value === RankCharacter.Jack)
 				this.showCardCalledModal = true;
+			else if (card.rank.value === RankCharacter.Ace)
+				this.showSuitCalledModal = true;
 			else this.player.makeAction();
 		}
 		console.log("[ME] after onCardClick");
@@ -43,6 +53,12 @@ export class PlayerComponent implements OnInit {
 	onRankSelected(rank: number) {
 		this.player.chosenRank = rank;
 		this.showCardCalledModal = false;
+		this.player.makeAction();
+	}
+
+	onSuitSelected(suit: Suit) {
+		this.player.chosenSuit = suit;
+		this.showSuitCalledModal = false;
 		this.player.makeAction();
 	}
 

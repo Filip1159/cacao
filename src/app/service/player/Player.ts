@@ -1,3 +1,4 @@
+import { Suit } from "../../model/Suit";
 import { Card } from "../../model/Card";
 import { State } from "../../model/enum/State";
 import { GameService } from "../game.service";
@@ -9,6 +10,7 @@ export abstract class Player {
 	state: State;
 	chosenMove: number;
 	chosenRank?: number;
+	chosenSuit?: Suit;
 
 	protected constructor(
 		protected gameService: GameService,
@@ -43,7 +45,10 @@ export abstract class Player {
 				this.drawCard();
 			this.gameService.cardsToPick = 0;
 			this.gameService.afterCardPlayed(null);
-		} else if (this.state === State.CARD_CALLED) {
+		} else if (
+			this.state === State.CARD_CALLED ||
+			this.state === State.SUIT_CALLED
+		) {
 			this.playCard();
 		}
 		console.log(

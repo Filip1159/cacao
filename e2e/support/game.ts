@@ -28,6 +28,8 @@ export class Game {
 	readonly playerState: Locator;
 	readonly opponentState: Locator;
 	readonly rankModal: Locator;
+	readonly suitModal: Locator;
+	readonly discardPile: Locator;
 
 	constructor(readonly page: Page) {
 		this.playerCards = page.locator("app-player app-card");
@@ -38,6 +40,8 @@ export class Game {
 		this.playerState = page.locator("#player_cards > span");
 		this.opponentState = page.locator("#opponent_cards > span");
 		this.rankModal = page.locator(".card-called-modal");
+		this.suitModal = page.locator(".suit-called-modal");
+		this.discardPile = page.locator("app-discard-pile");
 	}
 
 	/** Human-readable label of a card element, e.g. "10♠". */

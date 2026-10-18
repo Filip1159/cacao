@@ -17,6 +17,7 @@ export class GameService {
 	turn: BehaviorSubject<Turn>;
 	players: Player[];
 	cardCalled: number | null = null;
+	suitCalled: Suit | null = null;
 	cardsToPick: number = 0;
 
 	constructor(public cardService: CardService) {
@@ -28,7 +29,11 @@ export class GameService {
 		cardService.dealCards(this.players);
 	}
 
-	afterCardPlayed(card: Card | null, cardCalled?: number): void {
+	afterCardPlayed(
+		card: Card | null,
+		cardCalled?: number,
+		suitCalled?: Suit,
+	): void {
 		console.log(`[${Turn[this.turn.value]}] afterCardPlayed`);
 		if (card !== null)
 			console.log(
@@ -38,7 +43,7 @@ export class GameService {
 		if (card !== null) this.cardService.putCardOnDiscardPile(card);
 		this.switchTurn();
 		this.resetState();
-		if (card !== null) this.switchState(card, cardCalled);
+		if (card !== null) this.switchState(card, cardCalled, suitCalled);
 		if (this.turn.value === Turn.OPPONENT) {
 			timer(1000).subscribe(() =>
 				this.players[Turn.OPPONENT].makeAction(),
@@ -52,6 +57,8 @@ export class GameService {
 			return false;
 		if (this.players[this.turn.value].state === State.CARD_CALLED)
 			return this.cardCalled === card.rank.value;
+		if (this.players[this.turn.value].state === State.SUIT_CALLED)
+			return this.suitCalled === card.suit;
 		if (this.players[this.turn.value].state === State.MISSING) return false;
 		return (
 			card.rank.value === this.cardService.discardPileTop.rank.value ||
@@ -59,7 +66,7 @@ export class GameService {
 		);
 	}
 
-	switchState(card: Card, cardCalled?: number): void {
+	switchState(card: Card, cardCalled?: number, suitCalled?: Suit): void {
 		switch (card.rank.value) {
 			case 2:
 				this.players[this.turn.value].state = State.CARD_PICKING;
@@ -75,6 +82,10 @@ export class GameService {
 			case RankCharacter.Jack:
 				this.players[this.turn.value].state = State.CARD_CALLED;
 				this.cardCalled = cardCalled!;
+				break;
+			case RankCharacter.Ace:
+				this.players[this.turn.value].state = State.SUIT_CALLED;
+				this.suitCalled = suitCalled!;
 				break;
 			case RankCharacter.King:
 				if (card.suit === Suit.HEARTS || card.suit === Suit.SPADES) {
@@ -93,5 +104,6 @@ export class GameService {
 		this.players[this.turn.value].state = State.WAITING_FOR_CARD;
 		this.cardsToPick = 0;
 		this.cardCalled = null;
+		this.suitCalled = null;
 	}
 }
