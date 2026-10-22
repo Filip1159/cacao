@@ -3,6 +3,7 @@ import { PlayerComponent } from "./components/players/player/player.component";
 import { OpponentComponent } from "./components/players/opponent/opponent.component";
 import { GameOverComponent } from "./components/game-over/game-over.component";
 import { StatusComponent } from "./components/status/status.component";
+import { SetupModalComponent } from "./components/setup-modal/setup-modal.component";
 import { RulesModalComponent } from "./components/rules-modal/rules-modal.component";
 import { Difficulty, getAllDifficulties } from "./model/enum/Difficulty";
 import { GameService } from "./service/game.service";
@@ -19,6 +20,7 @@ import { DiscardPileComponent } from "./components/discard-pile/discard-pile.com
 		GameOverComponent,
 		StatusComponent,
 		RulesModalComponent,
+		SetupModalComponent,
 	],
 })
 export class AppComponent {

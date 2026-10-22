@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { Game, startGame } from "./support/game";
+import {
+	BOT_DELAY,
+	Game,
+	expectBotsTurn,
+	expectMyTurn,
+	startGame,
+} from "./support/game";
 
 /*
  * The deck is shuffled with Math.random, which `startGame` replaces with a
@@ -18,19 +24,6 @@ import { Game, startGame } from "./support/game";
  *   63    4♥   (after drawing) 3♦ 8♦ 2♦ 7♣ J♣ 4♣; the bot plays 4♥, we can pass it back with 4♣
  *   62    4♥   9♦ 2♦ 7♣ 9♣ 3♦ (+8♥)  after drawing, bot plays a 4
  */
-const BOT_DELAY = 5_000; // the bot waits ~1 s before acting
-
-async function expectMyTurn(game: Game) {
-	await expect(game.pickCardButton).toBeEnabled({ timeout: BOT_DELAY });
-}
-
-async function expectBotsTurn(game: Game) {
-	await expect(game.pickCardButton).toBeDisabled();
-	await expect(game.playerCards.locator(".card--disabled")).toHaveCount(
-		await game.playerCards.count(),
-	);
-}
-
 test.describe("initial table", () => {
 	test("shows both hands, the discard pile and the controls", async ({
 		page,
@@ -436,6 +429,7 @@ test.describe("game over and restart", () => {
 		await expect(game.gameOver).toBeVisible();
 
 		await game.gameOver.getByRole("button", { name: "New game" }).click();
+		await game.chooseRules();
 
 		await expect(game.gameOver).toBeHidden();
 		await expect(game.playerCards).toHaveCount(5);
@@ -452,6 +446,7 @@ test.describe("game over and restart", () => {
 		await expect(game.playerCards).toHaveCount(4);
 
 		await game.newGameButton.click();
+		await game.chooseRules();
 
 		await expect(game.playerCards).toHaveCount(5);
 		await expect(game.opponentCards).toHaveCount(5);

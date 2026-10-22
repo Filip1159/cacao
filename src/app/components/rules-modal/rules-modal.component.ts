@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Input, Output } from "@angular/core";
+import {
+	Component,
+	EventEmitter,
+	Input,
+	Output,
+	computed,
+} from "@angular/core";
+import { RULE_INFO } from "../../model/rule-options";
+import { GameService } from "../../service/game.service";
 
 @Component({
 	selector: "app-rules-modal",
@@ -8,6 +16,13 @@ import { Component, EventEmitter, Input, Output } from "@angular/core";
 export class RulesModalComponent {
 	@Input() visible = false;
 	@Output() closed = new EventEmitter<void>();
+
+	/** The optional rules switched on for this game. */
+	readonly optional = computed(() =>
+		RULE_INFO.filter((rule) => this.game.rules()[rule.id]),
+	);
+
+	constructor(private game: GameService) {}
 
 	readonly rules: { card: string; effect: string }[] = [
 		{ card: "2", effect: "Next player picks 2 cards" },

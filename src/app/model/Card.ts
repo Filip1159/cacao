@@ -1,4 +1,4 @@
-import { RANK_THREE, RANK_TWO, Rank, RankCharacter } from "./Rank";
+import { RANK_FOUR, RANK_THREE, RANK_TWO, Rank, RankCharacter } from "./Rank";
 import { Suit } from "./Suit";
 
 export interface Card {
@@ -21,3 +21,10 @@ export const penaltyOf = (card: Card): number => {
 			return 0;
 	}
 };
+
+/** Whether the card has an effect on the next player: a penalty, a miss, or a call. */
+export const isAction = (card: Card): boolean =>
+	penaltyOf(card) > 0 ||
+	card.rank.value === RANK_FOUR ||
+	card.rank.value === RankCharacter.Jack ||
+	card.rank.value === RankCharacter.Ace;

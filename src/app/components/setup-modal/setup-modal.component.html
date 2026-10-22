@@ -1,0 +1,34 @@
+@if (game.choosingRules()) {
+	<div class="setup">
+		<div class="setup__content" role="dialog" aria-label="Choose the rules">
+			<h2>Choose the rules</h2>
+			<p>
+				Optional rules are off by default. Tick the ones you want to
+				play with.
+			</p>
+			<ul class="setup__list">
+				@for (rule of info; track rule.id) {
+					<li>
+						<label class="setup__rule">
+							<input
+								type="checkbox"
+								[checked]="chosen()[rule.id]"
+								(change)="toggle(rule.id, $event)"
+							/>
+							<span>
+								<strong>{{ rule.title }}</strong>
+								{{ rule.description }}
+							</span>
+						</label>
+					</li>
+				}
+			</ul>
+			<div class="setup__buttons">
+				<button (click)="reset()">Basic rules</button>
+				<button class="btn-primary" (click)="start()">
+					Start game
+				</button>
+			</div>
+		</div>
+	</div>
+}

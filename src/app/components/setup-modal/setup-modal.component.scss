@@ -1,0 +1,63 @@
+@use "../modal";
+
+.setup {
+	position: fixed;
+	z-index: 4;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	overflow-y: auto;
+	background-color: rgba(10, 26, 60, 0.7);
+
+	&__content {
+		@include modal.card-stock;
+		margin: 40px auto;
+		padding: 28px 24px 24px;
+		width: min(560px, calc(100% - 32px));
+		line-height: 1.4;
+
+		h2 {
+			@include modal.card-title;
+			margin-bottom: 12px;
+		}
+
+		p {
+			margin: 0 0 14px;
+		}
+	}
+
+	&__list {
+		display: grid;
+		gap: 10px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	&__rule {
+		display: flex;
+		gap: 10px;
+		align-items: flex-start;
+		cursor: pointer;
+
+		input {
+			flex: none;
+			width: 20px;
+			height: 20px;
+			margin: 2px 0 0;
+			accent-color: var(--accent);
+		}
+
+		strong {
+			display: block;
+		}
+	}
+
+	&__buttons {
+		display: flex;
+		gap: 12px;
+		justify-content: center;
+		margin-top: 22px;
+	}
+}

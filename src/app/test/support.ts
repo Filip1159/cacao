@@ -5,6 +5,7 @@ import { Shuffle } from "../model/deck";
 import { Rank } from "../model/Rank";
 import { Suit } from "../model/Suit";
 import { Turn } from "../model/enum/Turn";
+import { DEFAULT_RULES, RuleId, RuleOptions } from "../model/rule-options";
 
 export const card = (rank: number, suit: Suit): Card => ({
 	rank: new Rank(rank),
@@ -50,3 +51,32 @@ export const setHands = (
 /** Replaces the discard pile of a running game with a single card. */
 export const setTop = (game: GameService, top: Card) =>
 	game.patch({ discard: [top] });
+
+/** The default rules with these optional rules switched on. */
+export const withRules = (...ids: RuleId[]): RuleOptions => ({
+	...DEFAULT_RULES,
+	...Object.fromEntries(ids.map((id) => [id, true])),
+});
+
+/** The hands of both players, the human's first. */
+export const hands = (me: Card[], opponent: Card[] = []): [Card[], Card[]] => [
+	me,
+	opponent,
+];
+
+/** The bot's turn, with the given cards in its hand and some (default 5) in the human's. */
+export const botTurn = (
+	botHand: Card[],
+	top: Card,
+	changes: Partial<GameState> = {},
+	humanCards = 5,
+): GameState =>
+	makeState({
+		turn: Turn.OPPONENT,
+		top,
+		hands: [
+			Array.from({ length: humanCards }, () => card(9, Suit.HEARTS)),
+			botHand,
+		],
+		...changes,
+	});

@@ -1,4 +1,4 @@
-import { Locator, Page } from "@playwright/test";
+import { Locator, Page, expect } from "@playwright/test";
 
 /**
  * Replaces Math.random with a seeded generator (mulberry32) so that the
@@ -8,6 +8,7 @@ export async function startGame(
 	page: Page,
 	seed: number,
 	difficulty: "easy" | "normal" | "hard" = "easy",
+	optionalRules: string[] = [],
 ): Promise<Game> {
 	await page.addInitScript((initialSeed) => {
 		let a = initialSeed;
@@ -19,11 +20,20 @@ export async function startGame(
 			return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 		};
 	}, seed);
+	// a card for the test hooks. Its rank is a plain number, so a Queen is shown as "12♣", not "Q♣".
+	await page.addInitScript(() => {
+		(window as any).fakeCard = (rank: number, suit: string) => ({
+			rank: { value: rank, toString: () => String(rank) },
+			suit,
+		});
+	});
 	await page.goto("/");
+	const game = new Game(page);
+	await game.chooseRules(optionalRules);
 	// the easy bot plays the first legal card and never chains cards, which
 	// keeps the scenarios below predictable
 	await page.getByLabel("Bot difficulty").selectOption(difficulty);
-	return new Game(page);
+	return game;
 }
 
 export class Game {
@@ -42,6 +52,7 @@ export class Game {
 	readonly discardPile: Locator;
 	readonly gameOver: Locator;
 	readonly newGameButton: Locator;
+	readonly setupDialog: Locator;
 
 	constructor(readonly page: Page) {
 		this.playerCards = page.locator("app-player app-card");
@@ -59,6 +70,18 @@ export class Game {
 		this.discardPile = page.locator("app-discard-pile");
 		this.gameOver = page.locator(".game-over");
 		this.newGameButton = page.locator(".header__restart");
+		this.setupDialog = page.getByRole("dialog", {
+			name: "Choose the rules",
+		});
+	}
+
+	/** Ticks the optional rules with these titles in the setup dialog (none by default) and starts the game. */
+	async chooseRules(titles: string[] = []): Promise<void> {
+		for (const title of titles)
+			await this.setupDialog.getByLabel(title).check();
+		await this.setupDialog
+			.getByRole("button", { name: "Start game" })
+			.click();
 	}
 
 	/** Human-readable label of a card element, e.g. "10♠". */
@@ -119,12 +142,27 @@ export class Game {
 		await this.page.evaluate((newCards) => {
 			const game = (window as any).macauGame;
 			const hands = [...game.state().hands];
-			hands[1] = newCards.map((c) => ({
-				rank: { value: c.rank, toString: () => String(c.rank) },
-				suit: c.suit,
-			}));
+			hands[1] = newCards.map((c) =>
+				(window as any).fakeCard(c.rank, c.suit),
+			);
 			game.patch({ hands });
 		}, cards);
+	}
+
+	/** Puts a card on top of the draw pile, the next one to be picked. */
+	async setNextCard(rank: number, suit: string): Promise<void> {
+		await this.page.evaluate(
+			({ rank, suit }) => {
+				const game = (window as any).macauGame;
+				game.patch({
+					deck: [
+						...game.state().deck,
+						(window as any).fakeCard(rank, suit),
+					],
+				});
+			},
+			{ rank, suit },
+		);
 	}
 
 	/** Adds a card to the human's hand. */
@@ -133,13 +171,7 @@ export class Game {
 			({ rank, suit }) => {
 				const game = (window as any).macauGame;
 				const hands = [...game.state().hands];
-				hands[0] = [
-					...hands[0],
-					{
-						rank: { value: rank, toString: () => String(rank) },
-						suit,
-					},
-				];
+				hands[0] = [...hands[0], (window as any).fakeCard(rank, suit)];
 				game.patch({ hands });
 			},
 			{ rank, suit },
@@ -149,6 +181,30 @@ export class Game {
 	async play(index: number): Promise<void> {
 		await this.playerCards.nth(index).click();
 	}
+
+	/** Waits for the top card of the discard pile, which only changes once the card has been rendered. */
+	async expectTop(label: string): Promise<void> {
+		await expect.poll(() => this.top()).toBe(label);
+	}
+
+	/** Waits for exactly these cards of the human's hand to be playable. */
+	async expectEnabled(indexes: number[]): Promise<void> {
+		await expect.poll(() => this.enabledIndexes()).toEqual(indexes);
+	}
+}
+
+/** The bot waits ~1 s before acting. */
+export const BOT_DELAY = 5_000;
+
+export async function expectMyTurn(game: Game) {
+	await expect(game.pickCardButton).toBeEnabled({ timeout: BOT_DELAY });
+}
+
+export async function expectBotsTurn(game: Game) {
+	await expect(game.pickCardButton).toBeDisabled();
+	await expect(game.playerCards.locator(".card--disabled")).toHaveCount(
+		await game.playerCards.count(),
+	);
 }
 
 export const rankOf = (label: string) => label.slice(0, -1);

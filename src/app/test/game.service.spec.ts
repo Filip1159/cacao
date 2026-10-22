@@ -5,7 +5,8 @@ import { Suit } from "../model/Suit";
 import { RankCharacter } from "../model/Rank";
 import { Turn } from "../model/enum/Turn";
 import { Difficulty } from "../model/enum/Difficulty";
-import { card, setHands, setTop, unshuffled } from "./support";
+import { DEFAULT_RULES } from "../model/rule-options";
+import { card, setHands, setTop, unshuffled, withRules } from "./support";
 
 describe("GameService", () => {
 	let game: GameService;
@@ -313,6 +314,71 @@ describe("GameService", () => {
 			jasmine.clock().tick(5000);
 			expect(game.state().turn).toBe(Turn.ME);
 			expect(opponent().length).toBe(5);
+		});
+	});
+
+	describe("choosing the rules", () => {
+		it("waits for the rules to be chosen, with the optional rules off", () => {
+			expect(game.choosingRules()).toBeTrue();
+			expect(game.rules()).toEqual(DEFAULT_RULES);
+		});
+
+		it("start plays the dealt game with the chosen rules", () => {
+			const dealt = game.state().hands;
+
+			game.start(withRules("queenWild"));
+
+			expect(game.choosingRules()).toBeFalse();
+			expect(game.rules().queenWild).toBeTrue();
+			expect(game.state().rules.queenWild).toBeTrue();
+			expect(game.state().hands).toEqual(dealt);
+		});
+
+		it("restart asks again and remembers the last choice", () => {
+			game.start(withRules("queenWild"));
+
+			game.restart();
+
+			expect(game.choosingRules()).toBeTrue();
+			expect(game.rules().queenWild).toBeTrue();
+			expect(game.state().rules.queenWild).toBeTrue();
+		});
+	});
+
+	describe("playing the drawn card", () => {
+		beforeEach(() => {
+			game.start(withRules("playAfterDraw"));
+			setTop(game, card(6, Suit.SPADES));
+			setHands(game, {
+				me: [card(9, Suit.HEARTS), card(10, Suit.HEARTS)],
+			});
+			game.patch({ deck: [card(6, Suit.DIAMS)] });
+		});
+
+		it("lets the player play the card just picked", () => {
+			game.pick();
+
+			expect(game.hasDrawn()).toBeTrue();
+			expect(game.isMyTurn()).toBeTrue();
+			expect(game.canHumanPick()).toBeFalse();
+			expect(game.isLegalMove(card(6, Suit.DIAMS))).toBeTrue();
+			expect(game.isLegalMove(card(9, Suit.HEARTS))).toBeFalse();
+
+			game.play(2);
+
+			expect(game.top()).toEqual(card(6, Suit.DIAMS));
+			expect(game.hasDrawn()).toBeFalse();
+			expect(game.isOpponentsTurn()).toBeTrue();
+		});
+
+		it("lets the player end the turn and keep it", () => {
+			game.pick();
+
+			game.endTurn();
+
+			expect(me().length).toBe(3);
+			expect(game.hasDrawn()).toBeFalse();
+			expect(game.isOpponentsTurn()).toBeTrue();
 		});
 	});
 });

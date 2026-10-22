@@ -9,25 +9,8 @@ import {
 	getBestMove,
 	playBotTurn,
 } from "../service/bot";
-import { GameState, topOf } from "../service/rules";
-import { card, keepOrder, makeState } from "./support";
-
-/** The bot's turn, with the given cards in its hand and some (default 5) in the human's. */
-const botTurn = (
-	botHand: Card[],
-	top: Card,
-	changes: Partial<GameState> = {},
-	humanCards = 5,
-): GameState =>
-	makeState({
-		turn: Turn.OPPONENT,
-		top,
-		hands: [
-			Array.from({ length: humanCards }, () => card(9, Suit.HEARTS)),
-			botHand,
-		],
-		...changes,
-	});
+import { topOf } from "../service/rules";
+import { botTurn, card, keepOrder } from "./support";
 
 describe("bot", () => {
 	const normal = Difficulty.NORMAL;

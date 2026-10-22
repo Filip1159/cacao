@@ -22,7 +22,7 @@
 		<button (click)="game.miss()" [disabled]="!game.canMiss()">
 			Miss turn
 		</button>
-		@if (game.isChaining()) {
+		@if (game.isChaining() || game.hasDrawn()) {
 			<button (click)="game.endTurn()">End turn</button>
 		}
 		<button

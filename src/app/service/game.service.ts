@@ -10,6 +10,7 @@ import { Subscription, timer } from "rxjs";
 import { Card } from "../model/Card";
 import { Difficulty } from "../model/enum/Difficulty";
 import { Turn } from "../model/enum/Turn";
+import { DEFAULT_RULES, RuleOptions } from "../model/rule-options";
 import { playBotTurn } from "./bot";
 import { Shuffle, shuffle } from "../model/deck";
 import {
@@ -19,6 +20,7 @@ import {
 	callMacau,
 	endChain,
 	hasCounter,
+	keepDrawn,
 	isLegalMove,
 	missTurn,
 	newGame,
@@ -49,7 +51,13 @@ export class GameService {
 	private readonly _state = signal<GameState>(newGame(this.shuffle));
 	private botTimer?: Subscription;
 
+	private readonly _rules = signal<RuleOptions>(DEFAULT_RULES);
+
 	readonly state = this._state.asReadonly();
+	/** The optional rules chosen for the current game. */
+	readonly rules = this._rules.asReadonly();
+	/** The setup dialog is open: a game is dealt, but it waits for the player to choose the rules and start. */
+	readonly choosingRules = signal(true);
 	readonly difficulty = signal<Difficulty>(Difficulty.NORMAL);
 	/** One-off message for the human, e.g. about a Macau penalty. */
 	readonly notice = signal<string | null>(null);
@@ -71,9 +79,14 @@ export class GameService {
 	readonly isChaining = computed(
 		() => this.isMyTurn() && this._state().chain.length > 0,
 	);
+	/** The human has just picked a card they may still play (rule `playAfterDraw`). */
+	readonly hasDrawn = computed(
+		() => this.isMyTurn() && this._state().drawn !== null,
+	);
 	readonly canHumanPick = computed(
 		() =>
 			this.isMyTurn() &&
+			this._state().drawn === null &&
 			this._state().chain.length === 0 &&
 			this._state().obligation.kind !== "miss",
 	);
@@ -119,10 +132,10 @@ export class GameService {
 		this.commit(missTurn(this._state()));
 	}
 
-	/** Ends the turn after the cards played so far. */
+	/** Ends the turn after the cards played so far, or keeps the card just picked. */
 	endTurn(): void {
-		if (!this.isChaining()) return;
-		this.commit(endChain(this._state()));
+		if (this.hasDrawn()) this.commit(keepDrawn(this._state()));
+		else if (this.isChaining()) this.commit(endChain(this._state()));
 	}
 
 	callMacau(): void {
@@ -131,11 +144,20 @@ export class GameService {
 
 	// --- game flow ---
 
+	/** Deals a new game with the same rules and asks which rules to play it with. */
 	restart(): void {
 		this.botTimer?.unsubscribe();
 		this.notice.set(null);
 		this.lastPlayer.set(null);
-		this._state.set(newGame(this.shuffle));
+		this._state.set(newGame(this.shuffle, this._rules()));
+		this.choosingRules.set(true);
+	}
+
+	/** Starts the dealt game with these optional rules. */
+	start(rules: RuleOptions): void {
+		this._rules.set(rules);
+		this._state.update((state) => ({ ...state, rules }));
+		this.choosingRules.set(false);
 	}
 
 	/** Replaces parts of the state; a hook for tests that need a specific situation. */

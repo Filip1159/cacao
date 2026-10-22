@@ -24,6 +24,17 @@
 				A 2, 3 or penalty King can be passed back with a card of the
 				same rank, and a 4 with another 4; penalties then add up.
 			</p>
+			@if (optional().length > 0) {
+				<h3>Optional rules in this game</h3>
+				<ul class="rules__list">
+					@for (rule of optional(); track rule.id) {
+						<li>
+							<strong class="rules__card">{{ rule.title }}</strong
+							>{{ rule.description }}
+						</li>
+					}
+				</ul>
+			}
 			<button class="btn-primary" (click)="closed.emit()">Close</button>
 		</div>
 	</div>

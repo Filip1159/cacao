@@ -1,4 +1,4 @@
-import { Card, penaltyOf } from "../model/Card";
+import { Card, isAction, penaltyOf } from "../model/Card";
 import { Difficulty } from "../model/enum/Difficulty";
 import { Turn } from "../model/enum/Turn";
 import { CALLABLE_RANKS, RANK_FOUR, RankCharacter } from "../model/Rank";
@@ -10,6 +10,7 @@ import {
 	hasCounter,
 	isLegalMove,
 	missTurn,
+	keepDrawn,
 	pickCards,
 	playCard,
 } from "./rules";
@@ -35,7 +36,7 @@ export function playBotTurn(
 		case "pick":
 			return hasCounter(state)
 				? playBestCard(state, difficulty, shuffle)
-				: pickCards(state, shuffle);
+				: drawCard(state, difficulty, shuffle);
 		default:
 			return playBestCard(state, difficulty, shuffle);
 	}
@@ -58,7 +59,13 @@ export function getBestMove(state: GameState, difficulty: Difficulty): number {
 	let bestScore = -Infinity;
 	hand.forEach((card, index) => {
 		if (!isLegalMove(state, card)) return;
-		const score = scoreOf(card, attack);
+		// playing a plain card that leaves only an action card behind would get the bot stuck with it
+		const stuck =
+			state.rules.noActionFinish &&
+			hand.length === 2 &&
+			!isAction(card) &&
+			isAction(hand[1 - index]);
+		const score = scoreOf(state, card, attack) - (stuck ? 100 : 0);
 		if (score > bestScore) {
 			best = index;
 			bestScore = score;
@@ -100,7 +107,28 @@ function playBestCard(
 	shuffle: Shuffle,
 ): GameState {
 	const move = getBestMove(state, difficulty);
-	if (move === -1) return pickCards(state, shuffle);
+	if (move === -1) return drawCard(state, difficulty, shuffle);
+	return playMove(state, move, difficulty);
+}
+
+/** Picks a card; with `playAfterDraw` it plays the card if it can (Easy keeps it). */
+function drawCard(
+	state: GameState,
+	difficulty: Difficulty,
+	shuffle: Shuffle,
+): GameState {
+	const next = pickCards(state, shuffle);
+	if (!next.drawn) return next;
+	if (difficulty === Difficulty.EASY) return keepDrawn(next);
+	return playMove(next, next.hands[Turn.OPPONENT].length - 1, difficulty);
+}
+
+/** Plays the card at `move` and, if it can, more cards of the same rank. */
+function playMove(
+	state: GameState,
+	move: number,
+	difficulty: Difficulty,
+): GameState {
 	const hand = state.hands[Turn.OPPONENT];
 	const rank = hand[move].rank.value;
 	const rest = hand.filter((_, index) => index !== move);
@@ -121,14 +149,23 @@ function playBestCard(
 			difficulty === Difficulty.EASY
 				? -1
 				: next.hands[Turn.OPPONENT].findIndex(
-						(card) => card.rank.value === chainRank,
+						(card) =>
+							card.rank.value === chainRank &&
+							isLegalMove(next, card),
 					);
 		next = more === -1 ? endChain(next) : playCard(next, more);
 	}
 	return next;
 }
 
-function scoreOf(card: Card, attack: boolean): number {
+function scoreOf(state: GameState, card: Card, attack: boolean): number {
+	if (state.rules.queenWild && card.rank.value === RankCharacter.Queen) {
+		// cancels a penalty or a miss, which beats passing it on unless attacking; kept for later otherwise
+		const pending =
+			state.obligation.kind === "pick" ||
+			state.obligation.kind === "miss";
+		return pending ? 15 : 3;
+	}
 	if (card.rank.value === RankCharacter.Jack) return 5;
 	if (card.rank.value === RankCharacter.Ace) return 4;
 	if (penaltyOf(card) > 0 || card.rank.value === RANK_FOUR)

@@ -14,8 +14,10 @@ import { GameOverComponent } from "../components/game-over/game-over.component";
 import { StatusComponent } from "../components/status/status.component";
 import { DrawPileComponent } from "../components/draw-pile/draw-pile.component";
 import { RulesModalComponent } from "../components/rules-modal/rules-modal.component";
+import { SetupModalComponent } from "../components/setup-modal/setup-modal.component";
+import { DEFAULT_RULES } from "../model/rule-options";
 import { Obligation } from "../service/rules";
-import { card, setHands, setTop, unshuffled } from "./support";
+import { card, setHands, setTop, unshuffled, withRules } from "./support";
 
 describe("CardComponent", () => {
 	const render = (rank: number, suit: Suit, disabled = false) => {
@@ -606,6 +608,21 @@ describe("RulesModalComponent", () => {
 		);
 	});
 
+	it("lists the optional rules switched on", () => {
+		const game = TestBed.inject(GameService);
+		const fixture = TestBed.createComponent(RulesModalComponent);
+		fixture.componentInstance.visible = true;
+		fixture.changeDetectorRef.detectChanges();
+		expect(fixture.nativeElement.textContent).not.toContain("Optional");
+
+		game.start(withRules("queenWild"));
+		fixture.changeDetectorRef.detectChanges();
+
+		expect(fixture.nativeElement.textContent).toContain(
+			"Optional rules in this game",
+		);
+	});
+
 	it("emits closed from the button and the backdrop", () => {
 		const fixture = TestBed.createComponent(RulesModalComponent);
 		fixture.componentInstance.visible = true;
@@ -618,5 +635,55 @@ describe("RulesModalComponent", () => {
 		fixture.nativeElement.querySelector(".rules__content").click(); // clicks inside the dialog don't close it
 
 		expect(closed).toBe(2);
+	});
+});
+
+describe("SetupModalComponent", () => {
+	const render = () => {
+		const fixture = TestBed.createComponent(SetupModalComponent);
+		fixture.detectChanges();
+		return fixture;
+	};
+	const boxes = (fixture: ComponentFixture<SetupModalComponent>) =>
+		Array.from<HTMLInputElement>(
+			fixture.nativeElement.querySelectorAll("input[type=checkbox]"),
+		);
+	const button = (
+		fixture: ComponentFixture<SetupModalComponent>,
+		name: string,
+	): HTMLButtonElement =>
+		Array.from<HTMLButtonElement>(
+			fixture.nativeElement.querySelectorAll("button"),
+		).find((b) => b.textContent!.includes(name))!;
+
+	it("offers every optional rule, none of them ticked", () => {
+		const fixture = render();
+		expect(boxes(fixture).length).toBeGreaterThan(0);
+		expect(boxes(fixture).every((box) => !box.checked)).toBeTrue();
+	});
+
+	it("starts the game with the ticked rules and closes", () => {
+		const fixture = render();
+		const game = TestBed.inject(GameService);
+		const [queen] = boxes(fixture);
+
+		queen.click();
+		button(fixture, "Start game").click();
+		fixture.detectChanges();
+
+		expect(game.rules().queenWild).toBeTrue();
+		expect(fixture.nativeElement.querySelector(".setup")).toBeNull();
+	});
+
+	it("goes back to the basic rules", () => {
+		const fixture = render();
+		boxes(fixture)[0].click();
+		fixture.detectChanges();
+
+		button(fixture, "Basic rules").click();
+		fixture.detectChanges();
+
+		expect(boxes(fixture).every((box) => !box.checked)).toBeTrue();
+		expect(fixture.componentInstance.chosen()).toEqual(DEFAULT_RULES);
 	});
 });

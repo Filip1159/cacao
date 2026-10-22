@@ -17,12 +17,7 @@ import {
 	playCard,
 	punishMissingMacau,
 } from "../service/rules";
-import { card, keepOrder, makeState } from "./support";
-
-const hands = (me: Card[], opponent: Card[] = []): [Card[], Card[]] => [
-	me,
-	opponent,
-];
+import { card, hands, keepOrder, makeState } from "./support";
 
 describe("rules", () => {
 	describe("newGame", () => {
