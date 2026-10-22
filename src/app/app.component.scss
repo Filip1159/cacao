@@ -40,21 +40,115 @@
 		font: 600 15px var(--font-ui);
 		color: var(--cream);
 
+		// looks like the buttons next to it
 		select {
-			padding: 5px 8px;
+			appearance: none;
+			padding: 6px 28px 6px 10px;
 			border: 1px solid var(--ink);
 			border-radius: 8px;
-			background-color: var(--cream);
+			background-color: var(--panel);
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%231d1d1d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+			background-repeat: no-repeat;
+			background-position: right 10px center;
 			color: var(--ink);
-			font: 600 15px var(--font-ui);
+			font:
+				600 15px "Segoe UI",
+				sans-serif;
+			text-transform: capitalize;
 			box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
 			cursor: pointer;
+			transition:
+				transform 0.1s,
+				background-color 0.1s,
+				box-shadow 0.1s;
+
+			&:hover {
+				background-color: #f6f7d6;
+				transform: translateY(-1px);
+				box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+			}
 
 			&:focus-visible {
 				outline: 3px solid aqua;
 				outline-offset: 2px;
 			}
 		}
+	}
+}
+
+// Where the browser lets the open list be styled, it gets the look of the
+// dialogs and buttons too. Elsewhere it stays the native list.
+@supports (appearance: base-select) {
+	.header__difficulty {
+		select,
+		::picker(select) {
+			appearance: base-select;
+		}
+
+		select {
+			background-image: none;
+			padding: 6px 10px;
+			// the text on the left and the chevron on the right, on one line
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 8px;
+			min-width: 6.5em;
+
+			&::picker-icon {
+				content: "";
+				width: 10px;
+				height: 6px;
+				flex: none;
+				background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%231d1d1d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+					no-repeat center;
+				transition: transform 0.1s;
+			}
+
+			&:open::picker-icon {
+				transform: rotate(180deg);
+			}
+
+			&::picker(select) {
+				margin-top: 6px;
+				padding: 4px;
+				border: 1px solid var(--ink);
+				border-radius: 8px;
+				background-color: var(--cream);
+				box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+			}
+
+			option {
+				padding: 6px 10px;
+				border-radius: 6px;
+				font:
+					600 15px "Segoe UI",
+					sans-serif;
+				color: var(--ink);
+				text-transform: capitalize;
+				cursor: pointer;
+
+				&:hover,
+				&:focus-visible {
+					background-color: var(--accent);
+					outline: none;
+				}
+
+				&:checked {
+					font-weight: 800;
+				}
+
+				&::checkmark {
+					display: none;
+				}
+			}
+		}
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.header__difficulty select {
+		transition: none;
 	}
 }
 
@@ -80,9 +174,19 @@
 			font-size: 14px;
 
 			select {
-				padding: 5px 4px;
+				padding: 6px 24px 6px 8px;
+				background-position: right 8px center;
 				font-size: 14px;
 			}
+		}
+	}
+}
+
+@media (max-width: 420px) {
+	@supports (appearance: base-select) {
+		.header__difficulty select {
+			padding: 6px 8px;
+			min-width: 5.5em;
 		}
 	}
 }
